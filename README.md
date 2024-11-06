@@ -1,8 +1,8 @@
 # Pokemon Auto Chess
 
-Non profit game. For fans, by fans.
+Juego sin ánimo de lucro. Para fans, por fans.
 
-## All rights to the Pokemon Company. Pokemon Auto Chess can stop at any time, whenever The Pokemon Company wants.
+## Todos los derechos son de The Pokémon Company. Pokémon Auto Chess puede detenerse en cualquier momento, cuando The Pokémon Company lo desee.
 
 [![translation badge](https://inlang.com/badge?url=github.com/keldaanCommunity/pokemonAutoChess)](https://inlang.com/editor/github.com/keldaanCommunity/pokemonAutoChess?ref=badge)
 
