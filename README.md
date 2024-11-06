@@ -8,9 +8,9 @@ Juego sin ánimo de lucro. Para fans, por fans.
 
 ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
-Play: [https://pokemon-auto-chess.com](https://pokemon-auto-chess.com/)
+Play: [https://pokemon.amunchi.net/](https://pokemon.amunchi.net/)
 
-Source: [https://github.com/keldaanCommunity/pokemonAutoChess](https://github.com/keldaanCommunity/pokemonAutoChess)
+Source: [https://github.com/MunchiA/pokemonAutoChess](https://github.com/MunchiA/pokemonAutoChess)
 
 ## Getting started
 
