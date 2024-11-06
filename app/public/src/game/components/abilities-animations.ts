@@ -55,12 +55,12 @@ export function displayAbility(
       addAbilitySprite(skill, coordinatesTarget, true).setScale(2)
       break
 
-    case Ability.FIRE_SPIN:
-      addAbilitySprite(Ability.FIRE_BLAST, coordinatesTarget, true).setScale(3)
+    case Ability.FIERY_DANCE:
+      addAbilitySprite(Ability.FIRE_BLAST, coordinatesTarget, true).setScale(2)
       break
 
-    case Ability.CORRUPTED_NATURE:
-      addAbilitySprite(skill, coordinates, true).setScale(2)
+    case Ability.FIRE_SPIN:
+      addAbilitySprite(Ability.FIRE_BLAST, coordinatesTarget, true).setScale(3)
       break
 
     case Ability.CRABHAMMER:
@@ -249,7 +249,23 @@ export function displayAbility(
     }
 
     case Ability.BLUE_FLARE: {
-      const specialProjectile = addAbilitySprite(skill, coordinates).setScale(2)
+      const specialProjectile = addAbilitySprite(skill, coordinates).setScale(3)
+      scene.tweens.add({
+        targets: specialProjectile,
+        x: coordinatesTarget[0],
+        y: coordinatesTarget[1],
+        ease: "linear",
+        yoyo: false,
+        duration: 1000,
+        onComplete: () => {
+          specialProjectile.destroy()
+        }
+      })
+      break
+    }
+
+    case Ability.GLACIATE: {
+      const specialProjectile = addAbilitySprite(skill, coordinates).setScale(3)
       scene.tweens.add({
         targets: specialProjectile,
         x: coordinatesTarget[0],
@@ -281,7 +297,7 @@ export function displayAbility(
     }
 
     case Ability.FUSION_BOLT: {
-      const specialProjectile = addAbilitySprite(skill, coordinates).setScale(2)
+      const specialProjectile = addAbilitySprite(skill, coordinates).setScale(3)
       scene.tweens.add({
         targets: specialProjectile,
         x: coordinatesTarget[0],
@@ -1501,12 +1517,12 @@ export function displayAbility(
       ).setScale(2)
       break
 
-    case "SHELL_TRAP_trigger":
-      addAbilitySprite(Ability.SHELL_TRAP, coordinates, true).setScale(2)
+    case Ability.SHELL_TRAP:
+      addAbilitySprite(Ability.COUNTER, coordinates, true).setScale(2)
       break
 
     case Ability.SHELL_SMASH:
-      addAbilitySprite(Ability.SHELL_TRAP, coordinates, true).setScale(2)
+      addAbilitySprite(Ability.COUNTER, coordinates, true).setScale(2)
       break
 
     case Ability.TRI_ATTACK: {
@@ -1562,6 +1578,10 @@ export function displayAbility(
         scale: 2,
         onComplete: () => {
           specialProjectile.destroy()
+          addAbilitySprite(Ability.DIVE, coordinatesTarget, true)
+            .setTint(0xf060a0)
+            .setScale(3)
+            .setDepth(1)
         }
       })
       break
@@ -2428,6 +2448,18 @@ export function displayAbility(
       )
       break
 
+    case Ability.WOOD_HAMMER:
+      addAbilitySprite(skill, coordinatesTarget, true)
+        .setScale(1)
+        .setOrigin(0.5, 1)
+      break
+
+    case Ability.TRICK_OR_TREAT:
+      addAbilitySprite(skill, coordinatesTarget, true)
+        .setScale(2)
+        .setOrigin(0.5, 1)
+      break
+
     case Ability.INFESTATION:
       {
         if (positionX !== undefined && positionY !== undefined) {
@@ -2632,6 +2664,10 @@ export function displayAbility(
       addAbilitySprite(Ability.ICE_HAMMER, coordinatesTarget, true).setScale(2)
       break
 
+    case Ability.STEEL_WING:
+      addAbilitySprite(Ability.STEEL_WING, coordinates, true).setScale(2)
+      break
+
     case Ability.FOUL_PLAY:
       addAbilitySprite(Ability.NIGHT_SLASH, coordinatesTarget, true).setScale(2)
       break
@@ -2648,6 +2684,14 @@ export function displayAbility(
       addAbilitySprite(Ability.THUNDER_CAGE, coordinatesTarget, true).setScale(
         2
       )
+      break
+
+    case Ability.BIDE:
+      addAbilitySprite(Ability.COUNTER, coordinates, true).setScale(3)
+      break
+
+    case Ability.SHORE_UP:
+      addAbilitySprite(Ability.EARTHQUAKE, coordinates, true).setScale(2)
       break
 
     default:

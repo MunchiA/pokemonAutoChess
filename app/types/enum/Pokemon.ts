@@ -334,6 +334,7 @@ export enum Pkm {
   HONEDGE = "HONEDGE",
   DOUBLADE = "DOUBLADE",
   AEGISLASH = "AEGISLASH",
+  AEGISLASH_BLADE = "AEGISLASH_BLADE",
   CUBONE = "CUBONE",
   MAROWAK = "MAROWAK",
   ALOLAN_MAROWAK = "ALOLAN_MAROWAK",
@@ -556,24 +557,7 @@ export enum Pkm {
   MELMETAL = "MELMETAL",
   HOOPA = "HOOPA",
   HOOPA_UNBOUND = "HOOPA_UNBOUND",
-  SILVALLY_FIRE = "SILVALLY_FIRE",
-  SILVALLY_FOSSIL = "SILVALLY_FOSSIL",
-  SILVALLY_PSYCHIC = "SILVALLY_PSYCHIC",
-  SILVALLY_WATER = "SILVALLY_WATER",
-  SILVALLY_ELECTRIC = "SILVALLY_ELECTRIC",
-  SILVALLY_FAIRY = "SILVALLY_FAIRY",
-  SILVALLY_DARK = "SILVALLY_DARK",
-  SILVALLY_GRASS = "SILVALLY_GRASS",
-  SILVALLY_ICE = "SILVALLY_ICE",
-  SILVALLY_FIGHTING = "SILVALLY_FIGHTING",
-  SILVALLY_LIGHT = "SILVALLY_LIGHT",
-  SILVALLY_POISON = "SILVALLY_POISON",
-  SILVALLY_SOUND = "SILVALLY_SOUND",
-  SILVALLY_STEEL = "SILVALLY_STEEL",
-  SILVALLY_FLYING = "SILVALLY_FLYING",
-  SILVALLY_ROCK = "SILVALLY_ROCK",
-  SILVALLY_GROUND = "SILVALLY_GROUND",
-  SILVALLY_GHOST = "SILVALLY_GHOST",
+  SILVALLY = "SILVALLY",
   TYPE_NULL = "TYPE_NULL",
   ZERAORA = "ZERAORA",
   XERNEAS = "XERNEAS",
@@ -608,6 +592,7 @@ export enum Pkm {
   MILTANK = "MILTANK",
   MANKEY = "MANKEY",
   PRIMEAPE = "PRIMEAPE",
+  ANNIHILAPE = "ANNIHILAPE",
   SUNKERN = "SUNKERN",
   SUNFLORA = "SUNFLORA",
   MARACTUS = "MARACTUS",
@@ -854,7 +839,20 @@ export enum Pkm {
   OGERPON_HEARTHFLAME_MASK = "OGERPON_HEARTHFLAME_MASK",
   OGERPON_CORNERSTONE = "OGERPON_CORNERSTONE",
   OGERPON_CORNERSTONE_MASK = "OGERPON_CORNERSTONE_MASK",
-  IRON_HANDS = "IRON_HANDS"
+  IRON_HANDS = "IRON_HANDS",
+  ROOKIDEE = "ROOKIDEE",
+  CORVISQUIRE = "CORVISQUIRE",
+  CORVIKNIGHT = "CORVIKNIGHT",
+  MURKROW = "MURKROW",
+  HONCHKROW = "HONCHKROW",
+  SANDYGAST = "SANDYGAST",
+  PALOSSAND = "PALOSSAND",
+  TURTONATOR = "TURTONATOR",
+  SKORUPI = "SKORUPI",
+  DRAPION = "DRAPION",
+  DARUMAKA = "DARUMAKA",
+  DARMANITAN = "DARMANITAN",
+  DARMANITAN_ZEN = "DARMANITAN_ZEN"
 }
 
 export const PkmIndex: { [key in Pkm]: string } = {
@@ -1191,6 +1189,7 @@ export const PkmIndex: { [key in Pkm]: string } = {
   [Pkm.HONEDGE]: "0679",
   [Pkm.DOUBLADE]: "0680",
   [Pkm.AEGISLASH]: "0681",
+  [Pkm.AEGISLASH_BLADE]: "0681-0001",
   [Pkm.CUBONE]: "0104",
   [Pkm.MAROWAK]: "0105",
   [Pkm.ALOLAN_MAROWAK]: "0105-0001",
@@ -1446,6 +1445,7 @@ export const PkmIndex: { [key in Pkm]: string } = {
   [Pkm.MILTANK]: "0241",
   [Pkm.MANKEY]: "0056",
   [Pkm.PRIMEAPE]: "0057",
+  [Pkm.ANNIHILAPE]: "0979",
   [Pkm.SUNKERN]: "0191",
   [Pkm.SUNFLORA]: "0192",
   [Pkm.MARACTUS]: "0556",
@@ -1581,24 +1581,7 @@ export const PkmIndex: { [key in Pkm]: string } = {
   [Pkm.SPINARAK]: "0167",
   [Pkm.ARIADOS]: "0168",
   [Pkm.TYPE_NULL]: "0772",
-  [Pkm.SILVALLY_FIRE]: "0773-0009",
-  [Pkm.SILVALLY_FOSSIL]: "0773-0015",
-  [Pkm.SILVALLY_PSYCHIC]: "0773-0013",
-  [Pkm.SILVALLY_WATER]: "0773-0010",
-  [Pkm.SILVALLY_ELECTRIC]: "0773-0012",
-  [Pkm.SILVALLY_FAIRY]: "0773-0017",
-  [Pkm.SILVALLY_DARK]: "0773-0016",
-  [Pkm.SILVALLY_GRASS]: "0773-0011",
-  [Pkm.SILVALLY_ICE]: "0773-0014",
-  [Pkm.SILVALLY_FIGHTING]: "0773-0001",
-  [Pkm.SILVALLY_LIGHT]: "0773-0006",
-  [Pkm.SILVALLY_POISON]: "0773-0003",
-  [Pkm.SILVALLY_SOUND]: "0773",
-  [Pkm.SILVALLY_STEEL]: "0773-0008",
-  [Pkm.SILVALLY_FLYING]: "0773-0002",
-  [Pkm.SILVALLY_ROCK]: "0773-0005",
-  [Pkm.SILVALLY_GROUND]: "0773-0004",
-  [Pkm.SILVALLY_GHOST]: "0773-0007",
+  [Pkm.SILVALLY]: "0773",
   [Pkm.DEWPIDER]: "0751",
   [Pkm.ARAQUANID]: "0752",
   [Pkm.ROCKRUFF]: "0744",
@@ -1711,7 +1694,20 @@ export const PkmIndex: { [key in Pkm]: string } = {
   [Pkm.OGERPON_HEARTHFLAME_MASK]: "1017-0005",
   [Pkm.OGERPON_CORNERSTONE]: "1017-0006",
   [Pkm.OGERPON_CORNERSTONE_MASK]: "1017-0007",
-  [Pkm.IRON_HANDS]: "0992"
+  [Pkm.IRON_HANDS]: "0992",
+  [Pkm.ROOKIDEE]: "0821",
+  [Pkm.CORVISQUIRE]: "0822",
+  [Pkm.CORVIKNIGHT]: "0823",
+  [Pkm.MURKROW]: "0198",
+  [Pkm.HONCHKROW]: "0430",
+  [Pkm.SANDYGAST]: "0769",
+  [Pkm.PALOSSAND]: "0770",
+  [Pkm.TURTONATOR]: "0776",
+  [Pkm.SKORUPI]: "0451",
+  [Pkm.DRAPION]: "0452",
+  [Pkm.DARUMAKA]: "0554",
+  [Pkm.DARMANITAN]: "0555",
+  [Pkm.DARMANITAN_ZEN]: "0555-0001"
 }
 
 export const PkmFamily: { [key in Pkm]: Pkm } = {
@@ -2043,6 +2039,7 @@ export const PkmFamily: { [key in Pkm]: Pkm } = {
   [Pkm.HONEDGE]: Pkm.HONEDGE,
   [Pkm.DOUBLADE]: Pkm.HONEDGE,
   [Pkm.AEGISLASH]: Pkm.HONEDGE,
+  [Pkm.AEGISLASH_BLADE]: Pkm.HONEDGE,
   [Pkm.CUBONE]: Pkm.CUBONE,
   [Pkm.MAROWAK]: Pkm.CUBONE,
   [Pkm.ALOLAN_MAROWAK]: Pkm.CUBONE,
@@ -2265,7 +2262,7 @@ export const PkmFamily: { [key in Pkm]: Pkm } = {
   [Pkm.MELMETAL]: Pkm.MELMETAL,
   [Pkm.HOOPA]: Pkm.HOOPA,
   [Pkm.HOOPA_UNBOUND]: Pkm.HOOPA,
-  [Pkm.SILVALLY_FIRE]: Pkm.TYPE_NULL,
+  [Pkm.SILVALLY]: Pkm.TYPE_NULL,
   [Pkm.ZERAORA]: Pkm.ZERAORA,
   [Pkm.XERNEAS]: Pkm.XERNEAS,
   [Pkm.YVELTAL]: Pkm.YVELTAL,
@@ -2301,6 +2298,7 @@ export const PkmFamily: { [key in Pkm]: Pkm } = {
   [Pkm.MILTANK]: Pkm.MILTANK,
   [Pkm.MANKEY]: Pkm.MANKEY,
   [Pkm.PRIMEAPE]: Pkm.MANKEY,
+  [Pkm.ANNIHILAPE]: Pkm.MANKEY,
   [Pkm.SUNKERN]: Pkm.SUNKERN,
   [Pkm.SUNFLORA]: Pkm.SUNKERN,
   [Pkm.MARACTUS]: Pkm.MARACTUS,
@@ -2437,23 +2435,6 @@ export const PkmFamily: { [key in Pkm]: Pkm } = {
   [Pkm.WATCHOG]: Pkm.PATRAT,
   [Pkm.SPINARAK]: Pkm.SPINARAK,
   [Pkm.ARIADOS]: Pkm.SPINARAK,
-  [Pkm.SILVALLY_FOSSIL]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_PSYCHIC]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_WATER]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_ELECTRIC]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_FAIRY]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_DARK]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_GRASS]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_ICE]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_FIGHTING]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_LIGHT]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_POISON]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_SOUND]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_STEEL]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_FLYING]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_ROCK]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_GROUND]: Pkm.TYPE_NULL,
-  [Pkm.SILVALLY_GHOST]: Pkm.TYPE_NULL,
   [Pkm.DEWPIDER]: Pkm.DEWPIDER,
   [Pkm.ARAQUANID]: Pkm.DEWPIDER,
   [Pkm.ROCKRUFF]: Pkm.ROCKRUFF,
@@ -2568,7 +2549,20 @@ export const PkmFamily: { [key in Pkm]: Pkm } = {
   [Pkm.OGERPON_HEARTHFLAME_MASK]: Pkm.OGERPON_TEAL,
   [Pkm.OGERPON_CORNERSTONE]: Pkm.OGERPON_TEAL,
   [Pkm.OGERPON_CORNERSTONE_MASK]: Pkm.OGERPON_TEAL,
-  [Pkm.IRON_HANDS]: Pkm.IRON_HANDS
+  [Pkm.IRON_HANDS]: Pkm.IRON_HANDS,
+  [Pkm.ROOKIDEE]: Pkm.ROOKIDEE,
+  [Pkm.CORVISQUIRE]: Pkm.ROOKIDEE,
+  [Pkm.CORVIKNIGHT]: Pkm.ROOKIDEE,
+  [Pkm.MURKROW]: Pkm.MURKROW,
+  [Pkm.HONCHKROW]: Pkm.MURKROW,
+  [Pkm.SANDYGAST]: Pkm.SANDYGAST,
+  [Pkm.PALOSSAND]: Pkm.SANDYGAST,
+  [Pkm.TURTONATOR]: Pkm.TURTONATOR,
+  [Pkm.SKORUPI]: Pkm.SKORUPI,
+  [Pkm.DRAPION]: Pkm.SKORUPI,
+  [Pkm.DARUMAKA]: Pkm.DARUMAKA,
+  [Pkm.DARMANITAN]: Pkm.DARUMAKA,
+  [Pkm.DARMANITAN_ZEN]: Pkm.DARUMAKA
 }
 
 export const PkmRegionalVariants: { [key in Pkm]?: readonly Pkm[] } = {
@@ -3765,19 +3759,19 @@ export const AnimationConfig: {
     emote: AnimationType.Shoot
   },
   [Pkm.SLOWPOKE]: {
-    attack: AnimationType.Charge,
-    ability: AnimationType.Swing,
+    attack: AnimationType.Attack,
+    ability: AnimationType.Charge,
     emote: AnimationType.Shoot
   },
   [Pkm.SLOWBRO]: {
-    attack: AnimationType.Charge,
-    ability: AnimationType.Shake,
-    emote: AnimationType.Shoot
+    attack: AnimationType.Attack,
+    ability: AnimationType.Shoot,
+    emote: AnimationType.Shake
   },
   [Pkm.SLOWKING]: {
-    attack: AnimationType.Shoot,
-    ability: AnimationType.RearUp,
-    emote: AnimationType.Shoot
+    attack: AnimationType.Attack,
+    ability: AnimationType.Charge,
+    emote: AnimationType.RearUp
   },
   [Pkm.BELLSPROUT]: {
     attack: AnimationType.Strike,
@@ -3910,8 +3904,8 @@ export const AnimationConfig: {
     emote: AnimationType.Shoot
   },
   [Pkm.MANAPHY]: {
-    attack: AnimationType.RearUp,
-    ability: AnimationType.Double,
+    attack: AnimationType.Shoot,
+    ability: AnimationType.RearUp,
     emote: AnimationType.Shoot
   },
   [Pkm.ROTOM]: {
@@ -3971,9 +3965,9 @@ export const AnimationConfig: {
     emote: AnimationType.Pose
   },
   [Pkm.KYUREM]: {
-    attack: AnimationType.Attack,
+    attack: AnimationType.Shoot,
     ability: AnimationType.Attack,
-    emote: AnimationType.Shoot
+    emote: AnimationType.Charge
   },
   [Pkm.RESHIRAM]: {
     attack: AnimationType.Attack,
@@ -4157,7 +4151,7 @@ export const AnimationConfig: {
     emote: AnimationType.Shoot
   },
   [Pkm.ARCHEN]: {
-    attack: AnimationType.Swing,
+    attack: AnimationType.Attack,
     ability: AnimationType.FlapAround,
     emote: AnimationType.Shoot
   },
@@ -4354,7 +4348,12 @@ export const AnimationConfig: {
   },
   [Pkm.AEGISLASH]: {
     attack: AnimationType.Attack,
-    ability: AnimationType.Charge,
+    ability: AnimationType.Special0,
+    emote: AnimationType.Shoot
+  },
+  [Pkm.AEGISLASH_BLADE]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Special0,
     emote: AnimationType.Shoot
   },
   [Pkm.CUBONE]: {
@@ -5101,12 +5100,12 @@ export const AnimationConfig: {
   },
   [Pkm.SANDSHREW]: {
     attack: AnimationType.Strike,
-    ability: AnimationType.Withdraw,
-    emote: AnimationType.Shoot
+    ability: AnimationType.Attack,
+    emote: AnimationType.LostBalance
   },
   [Pkm.SANDSLASH]: {
     attack: AnimationType.Strike,
-    ability: AnimationType.Withdraw,
+    ability: AnimationType.Attack,
     emote: AnimationType.DeepBreath
   },
   [Pkm.FARFETCH_D]: {
@@ -5470,7 +5469,7 @@ export const AnimationConfig: {
     ability: AnimationType.Charge,
     emote: AnimationType.Cringe
   },
-  [Pkm.SILVALLY_FIRE]: {
+  [Pkm.SILVALLY]: {
     attack: AnimationType.Strike,
     ability: AnimationType.Shoot,
     emote: AnimationType.Shoot
@@ -5516,13 +5515,13 @@ export const AnimationConfig: {
     emote: AnimationType.Shoot
   },
   [Pkm.SUDOWOODO]: {
-    attack: AnimationType.Slam,
-    ability: AnimationType.Attack,
+    attack: AnimationType.Attack,
+    ability: AnimationType.Slam,
     emote: AnimationType.Charge
   },
   [Pkm.PHIONE]: {
-    attack: AnimationType.Attack,
-    ability: AnimationType.Charge,
+    attack: AnimationType.Shoot,
+    ability: AnimationType.Twirl,
     emote: AnimationType.Shoot
   },
   [Pkm.COMBEE]: {
@@ -5649,6 +5648,11 @@ export const AnimationConfig: {
     attack: AnimationType.MultiStrike,
     ability: AnimationType.Charge,
     emote: AnimationType.Strike
+  },
+  [Pkm.ANNIHILAPE]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.RearUp,
+    emote: AnimationType.RearUp
   },
   [Pkm.SUNKERN]: {
     attack: AnimationType.Shoot,
@@ -6338,91 +6342,6 @@ export const AnimationConfig: {
     ability: AnimationType.Shoot,
     emote: AnimationType.Shoot
   },
-  [Pkm.SILVALLY_FOSSIL]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_PSYCHIC]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_WATER]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_ELECTRIC]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_FAIRY]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_DARK]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_GRASS]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_ICE]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_FIGHTING]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_LIGHT]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_POISON]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_SOUND]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_STEEL]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_FLYING]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_ROCK]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_GROUND]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
-  [Pkm.SILVALLY_GHOST]: {
-    attack: AnimationType.Strike,
-    ability: AnimationType.Shoot,
-    emote: AnimationType.Shoot
-  },
   [Pkm.DEWPIDER]: {
     attack: AnimationType.Strike,
     ability: AnimationType.Shoot,
@@ -7009,5 +6928,73 @@ export const AnimationConfig: {
     attack: AnimationType.Attack,
     ability: AnimationType.Strike,
     emote: AnimationType.Hop
+  },
+  [Pkm.ROOKIDEE]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Shoot,
+    emote: AnimationType.Charge
+  },
+  [Pkm.CORVISQUIRE]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Shoot,
+    emote: AnimationType.Charge,
+    shinyUnavailable: true
+  },
+  [Pkm.CORVIKNIGHT]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Shoot,
+    emote: AnimationType.Charge,
+    shinyUnavailable: true
+  },
+  [Pkm.MURKROW]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Shoot,
+    emote: AnimationType.Charge
+  },
+  [Pkm.HONCHKROW]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Shoot,
+    emote: AnimationType.Charge
+  },
+  [Pkm.SANDYGAST]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Shoot,
+    emote: AnimationType.Charge
+  },
+  [Pkm.PALOSSAND]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Shoot,
+    emote: AnimationType.Charge
+  },
+  [Pkm.TURTONATOR]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Shoot,
+    emote: AnimationType.Idle
+  },
+  [Pkm.SKORUPI]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Jab,
+    emote: AnimationType.Shoot
+  },
+  [Pkm.DRAPION]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Jab,
+    emote: AnimationType.Shoot
+  },
+  [Pkm.DARUMAKA]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Attack,
+    emote: AnimationType.Dance
+  },
+  [Pkm.DARMANITAN]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.QuickStrike,
+    emote: AnimationType.Rumble
+  },
+  [Pkm.DARMANITAN_ZEN]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Charge,
+    emote: AnimationType.Charge,
+    shinyUnavailable: true
   }
 }

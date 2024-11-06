@@ -30,7 +30,7 @@ import type { Passive } from "../../../../types/enum/Passive"
 import { Pkm } from "../../../../types/enum/Pokemon"
 import type { Synergy } from "../../../../types/enum/Synergy"
 import { clamp, min } from "../../../../utils/number"
-import { coinflip } from "../../../../utils/random"
+import { chance } from "../../../../utils/random"
 import { values } from "../../../../utils/schemas"
 import { transformAttackCoordinate } from "../../pages/utils/utils"
 import { preferences } from "../../preferences"
@@ -82,6 +82,7 @@ export default class PokemonSprite extends DraggableObject {
   detail: PokemonDetail | PokemonSpecialDetail | null = null
   pp: number | undefined
   maxPP: number
+  luck: number
   powerbar: PowerBar | undefined
   sprite: GameObjects.Sprite
   shadow: GameObjects.Sprite
@@ -89,6 +90,7 @@ export default class PokemonSprite extends DraggableObject {
   burn: GameObjects.Sprite | undefined
   sleep: GameObjects.Sprite | undefined
   silence: GameObjects.Sprite | undefined
+  fatigue: GameObjects.Sprite | undefined
   freeze: GameObjects.Sprite | undefined
   confusion: GameObjects.Sprite | undefined
   paralysis: GameObjects.Sprite | undefined
@@ -164,6 +166,7 @@ export default class PokemonSprite extends DraggableObject {
     this.positionY = pokemon.positionY
     this.attackSprite = pokemon.attackSprite
     this.ap = pokemon.ap
+    this.luck = pokemon.luck
     if (this.range > 1) {
       this.rangeType = "range"
     } else {
@@ -266,10 +269,6 @@ export default class PokemonSprite extends DraggableObject {
     }
   }
 
-  get isOnBench(): boolean {
-    return this.positionY === 0
-  }
-
   updateTooltipPosition() {
     if (this.detail) {
       if (this.input && preferences.showDetailsOnHover) {
@@ -330,6 +329,7 @@ export default class PokemonSprite extends DraggableObject {
       this.critPower,
       this.ap,
       this.pp || this.maxPP,
+      this.luck,
       this.types,
       this.skill,
       this.passive,
@@ -649,6 +649,23 @@ export default class PokemonSprite extends DraggableObject {
     if (this.silence) {
       this.remove(this.silence, true)
       this.silence = undefined
+    }
+  }
+
+  addFatigue() {
+    if (!this.fatigue) {
+      this.fatigue = this.scene.add
+        .sprite(0, -10, "status", "FATIGUE/000.png")
+        .setScale(2)
+      this.fatigue.anims.play("FATIGUE")
+      this.add(this.fatigue)
+    }
+  }
+
+  removeFatigue() {
+    if (this.fatigue) {
+      this.remove(this.fatigue, true)
+      this.fatigue = undefined
     }
   }
 
@@ -1079,7 +1096,7 @@ export function addWanderingPokemon(
     tween: Phaser.Tweens.Tween
   ) => void
 ) {
-  const fromLeft = coinflip()
+  const fromLeft = chance(1 / 2)
   const [startX, endX] = fromLeft
     ? [-100, +window.innerWidth + 100]
     : [+window.innerWidth + 100, -100]

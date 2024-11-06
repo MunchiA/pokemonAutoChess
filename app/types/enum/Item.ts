@@ -1,4 +1,6 @@
+import { reverseMap } from "../../utils/map"
 import { Synergy } from "./Synergy"
+import { Weather } from "./Weather"
 
 export enum Item {
   FOSSIL_STONE = "FOSSIL_STONE",
@@ -90,6 +92,8 @@ export enum Item {
   EXP_SHARE = "EXP_SHARE",
   POKERUS_VIAL = "POKERUS_VIAL",
   ROTOM_PHONE = "ROTOM_PHONE",
+  SILK_SCARF = "SILK_SCARF",
+  TINY_MUSHROOM = "TINY_MUSHROOM",
   METEORITE = "METEORITE",
   BERRY_JUICE = "BERRY_JUICE",
   TRASH = "TRASH",
@@ -111,6 +115,11 @@ export enum Item {
   HEAT_ROCK = "HEAT_ROCK",
   SMOOTH_ROCK = "SMOOTH_ROCK",
   BLACK_AUGURITE = "BLACK_AUGURITE",
+  FLOAT_STONE = "FLOAT_STONE",
+  MIST_STONE = "MIST_STONE",
+  ELECTRIC_QUARTZ = "ELECTRIC_QUARTZ",
+  BLOOD_STONE = "BLOOD_STONE",
+  SMELLY_CLAY = "SMELLY_CLAY",
   FIRE_SHARD = "FIRE_SHARD",
   TEAL_MASK = "TEAL_MASK",
   WELLSPRING_MASK = "WELLSPRING_MASK",
@@ -228,9 +237,9 @@ export const Berries: Item[] = [
 ]
 
 export const ArtificialItems: Item[] = [
+  Item.EXP_SHARE,
   Item.ELECTIRIZER,
   Item.MAGMARIZER,
-  Item.EXP_SHARE,
   Item.LIGHT_BALL,
   Item.TOXIC_ORB,
   Item.HARD_STONE,
@@ -241,7 +250,9 @@ export const ArtificialItems: Item[] = [
   Item.METRONOME,
   Item.BIG_NUGGET,
   Item.POKERUS_VIAL,
-  Item.ROTOM_PHONE
+  Item.ROTOM_PHONE,
+  Item.SILK_SCARF,
+  Item.TINY_MUSHROOM
 ]
 
 export const ShinyItems: Item[] = [
@@ -262,8 +273,32 @@ export const WeatherRocks: Item[] = [
   Item.ICY_ROCK,
   Item.HEAT_ROCK,
   Item.SMOOTH_ROCK,
-  Item.BLACK_AUGURITE
+  Item.BLACK_AUGURITE,
+  Item.FLOAT_STONE,
+  Item.ELECTRIC_QUARTZ,
+  Item.MIST_STONE,
+  Item.BLOOD_STONE,
+  Item.SMELLY_CLAY
 ]
+
+export const WeatherRocksByWeather: Map<
+  Weather,
+  (typeof WeatherRocks)[number] | null
+> = new Map([
+  [Weather.SUN, Item.HEAT_ROCK],
+  [Weather.RAIN, Item.DAMP_ROCK],
+  [Weather.SANDSTORM, Item.SMOOTH_ROCK],
+  [Weather.SNOW, Item.ICY_ROCK],
+  [Weather.STORM, Item.ELECTRIC_QUARTZ],
+  [Weather.MISTY, Item.MIST_STONE],
+  [Weather.WINDY, Item.FLOAT_STONE],
+  [Weather.SMOG, Item.SMELLY_CLAY],
+  [Weather.NIGHT, Item.BLACK_AUGURITE],
+  [Weather.BLOODMOON, Item.BLOOD_STONE],
+  [Weather.NEUTRAL, null]
+])
+
+export const WeatherByWeatherRocks = reverseMap(WeatherRocksByWeather)
 
 export const CraftableItems: Item[] = Object.keys(ItemRecipe) as Item[]
 
@@ -299,11 +334,8 @@ export const SynergyItems = [
   Item.BIG_NUGGET,
   Item.ROTOM_PHONE,
   Item.SHINY_STONE,
-  Item.DAMP_ROCK,
-  Item.ICY_ROCK,
-  Item.HEAT_ROCK,
-  Item.SMOOTH_ROCK,
-  Item.BLACK_AUGURITE
+  Item.SILK_SCARF,
+  Item.TINY_MUSHROOM
 ] as const
 
 export const SynergyGivenByItem: Record<
@@ -329,11 +361,8 @@ export const SynergyGivenByItem: Record<
   [Item.BIG_NUGGET]: Synergy.GROUND,
   [Item.ROTOM_PHONE]: Synergy.GHOST,
   [Item.SHINY_STONE]: Synergy.LIGHT,
-  [Item.DAMP_ROCK]: Synergy.WATER,
-  [Item.ICY_ROCK]: Synergy.ICE,
-  [Item.HEAT_ROCK]: Synergy.FIRE,
-  [Item.SMOOTH_ROCK]: Synergy.GROUND,
-  [Item.BLACK_AUGURITE]: Synergy.DARK
+  [Item.SILK_SCARF]: Synergy.NORMAL,
+  [Item.TINY_MUSHROOM]: Synergy.BUG
 }
 
 export const NonSpecialItemComponents: Item[] = [
@@ -345,4 +374,18 @@ export const NonSpecialItemComponents: Item[] = [
   Item.NEVER_MELT_ICE,
   Item.HEART_SCALE,
   Item.MYSTIC_WATER
+]
+
+export const NonHoldableItems: Item[] = [
+  ...WeatherRocks,
+  ...FishingRods,
+  Item.METEORITE,
+  Item.FIRE_SHARD
+]
+
+export const OgerponMasks: Item[] = [
+  Item.TEAL_MASK,
+  Item.WELLSPRING_MASK,
+  Item.CORNERSTONE_MASK,
+  Item.HEARTHFLAME_MASK
 ]

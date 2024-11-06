@@ -5,8 +5,9 @@ import { FilterQuery } from "mongoose"
 import { GameUser, IGameUser } from "../../models/colyseus-models/game-user"
 import { BotV2, IBot } from "../../models/mongo-models/bot-v2"
 import UserMetadata from "../../models/mongo-models/user-metadata"
-import { Role, Transfer } from "../../types"
+import { Role } from "../../types"
 import {
+  EloRank,
   EloRankThreshold,
   MAX_PLAYERS_PER_GAME,
   MIN_HUMAN_PLAYERS
@@ -175,7 +176,7 @@ export class OnGameStartRequestCommand extends Command<
       if (nbHumanPlayers < MIN_HUMAN_PLAYERS && process.env.MODE !== "dev") {
         this.state.addMessage({
           authorId: "Server",
-          payload: `Due to the current high traffic on the game, to limit the resources used server side, only games with a minimum of 8 players are authorized.`,
+          payload: `Due to the current high traffic on the game, to limit the resources used server side, only games with a minimum of ${MIN_HUMAN_PLAYERS} players are authorized.`,
           avatar: "0054/Surprised"
         })
         return
@@ -323,9 +324,11 @@ export class OnRoomNameCommand extends Command<
   execute({ client, message: roomName }) {
     roomName = cleanProfanity(roomName)
     try {
+      const user = this.state.users.get(client.auth?.uid)
       if (
-        client.auth?.uid == this.state.ownerId &&
-        this.state.name != roomName
+        this.state.name != roomName &&
+        (client.auth?.uid == this.state.ownerId ||
+          (user && [Role.ADMIN, Role.MODERATOR].includes(user.role)))
       ) {
         this.room.setName(roomName)
         this.state.name = roomName
@@ -351,6 +354,35 @@ export class OnRoomPasswordCommand extends Command<
       ) {
         this.room.setPassword(password)
         this.state.password = password
+      }
+    } catch (error) {
+      logger.error(error)
+    }
+  }
+}
+
+export class OnRoomChangeRankCommand extends Command<
+  PreparationRoom,
+  {
+    client: Client
+    minRank: EloRank | null
+    maxRank: EloRank | null
+  }
+> {
+  execute({ client, minRank, maxRank }) {
+    try {
+      if (
+        client.auth?.uid == this.state.ownerId &&
+        (minRank !== this.state.minRank || maxRank !== this.state.maxRank)
+      ) {
+        if (EloRankThreshold[minRank] > EloRankThreshold[maxRank]) {
+          if (minRank !== this.state.minRank) maxRank = minRank
+          else minRank = maxRank
+        }
+
+        this.room.setMinMaxRanks(minRank, maxRank)
+        this.state.minRank = minRank
+        this.state.maxRank = maxRank
       }
     } catch (error) {
       logger.error(error)

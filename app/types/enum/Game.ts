@@ -104,7 +104,8 @@ export enum Stat {
   CRIT_CHANCE = "CRIT_CHANCE",
   CRIT_POWER = "CRIT_POWER",
   AP = "AP",
-  SHIELD = "SHIELD"
+  SHIELD = "SHIELD",
+  LUCK = "LUCK"
 }
 
 export enum Damage {
@@ -116,14 +117,4 @@ export enum Damage {
 export enum Team {
   BLUE_TEAM = 0,
   RED_TEAM = 1
-}
-
-export enum BoardEvent {
-  LIGHTNING = "LIGHTNING",
-  GAS = "GAS",
-  POISON_GAS = "POISON_GAS",
-  STEALTH_ROCKS = "STEALTH_ROCKS",
-  SPIKES = "SPIKES",
-  STICKY_WEB = "STICKY_WEB",
-  HAIL = "HAIL"
 }

@@ -18,11 +18,10 @@ import GameRoom from "../rooms/game-room"
 import { ILeaderboardInfo } from "../types/interfaces/LeaderboardInfo"
 import { Ability } from "./enum/Ability"
 import { DungeonPMDO } from "./enum/Dungeon"
-import { Effect } from "./enum/Effect"
+import { BoardEffect, Effect } from "./enum/Effect"
 import { Emotion } from "./enum/Emotion"
 import {
   AttackType,
-  BoardEvent,
   GameMode,
   Orientation,
   PokemonActionState,
@@ -86,6 +85,7 @@ export enum Transfer {
   GAME_END = "GAME_END",
   CHANGE_ROOM_NAME = "CHANGE_ROOM_NAME",
   CHANGE_ROOM_PASSWORD = "CHANGE_ROOM_PASSWORD",
+  CHANGE_ROOM_RANKS = "CHANGE_ROOM_RANKS",
   BUY_EMOTION = "BUY_EMOTION",
   BOOSTER_CONTENT = "BOOSTER_CONTENT",
   USER = "USER",
@@ -372,7 +372,10 @@ export interface IPlayer {
   rerollCount: number
   totalMoneyEarned: number
   totalPlayerDamageDealt: number
+  wildChance: number
   eggChance: number
+  lightX: number
+  lightY: number
 }
 
 export interface IPokemon {
@@ -395,6 +398,7 @@ export interface IPokemon {
   range: number
   stars: number
   maxPP: number
+  luck: number
   ap: number
   skill: Ability
   passive: Passive
@@ -407,6 +411,7 @@ export interface IPokemon {
   canBePlaced: boolean
   canBeCloned: boolean
   canHoldItems: boolean
+  deathCount: number
 }
 
 export interface IExperienceManager {
@@ -469,8 +474,15 @@ export function instanceofPokemonEntity(
 export interface IPokemonEntity {
   simulation: ISimulation
   refToBoardPokemon: IPokemon
+  get player(): IPlayer | undefined
   applyStat(stat: Stat, value: number): void
   addAbilityPower(
+    value: number,
+    caster: IPokemonEntity,
+    apBoost: number,
+    crit: boolean
+  ): void
+  addLuck(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
@@ -544,6 +556,7 @@ export interface IPokemonEntity {
   ): void
   skydiveTo(x: number, y: number, board: Board): void
   toIdleState(): void
+  toMovingState(): void
   physicalDamage: number
   specialDamage: number
   trueDamage: number
@@ -564,6 +577,7 @@ export interface IPokemonEntity {
   atk: number
   def: number
   speDef: number
+  luck: number
   attackType: AttackType
   life: number
   shield: number
@@ -597,6 +611,7 @@ export interface IStatus {
   magmaStorm: boolean
   burn: boolean
   silence: boolean
+  fatigue: boolean
   poisonStacks: number
   freeze: boolean
   protect: boolean
@@ -723,7 +738,6 @@ export enum Title {
   HARLEQUIN = "HARLEQUIN",
   TACTICIAN = "TACTICIAN",
   STRATEGIST = "STRATEGIST",
-  GLITCH_TRAINER = "GLITCH_TRAINER",
   NURSE = "NURSE",
   GARDIAN = "GARDIAN",
   DUKE = "DUKE",
@@ -734,7 +748,6 @@ export enum Title {
   GYM_CHALLENGER = "GYM_CHALLENGER",
   GYM_TRAINER = "GYM_TRAINER",
   ACE_TRAINER = "ACE_TRAINER",
-  BACKER = "BACKER",
   TYRANT = "TYRANT",
   SURVIVOR = "SURVIVOR",
   GAMBLER = "GAMBLER",
@@ -759,7 +772,7 @@ export enum Title {
 
 export interface IBoardEvent {
   simulationId: string
-  type: BoardEvent
+  effect: BoardEffect
   x: number
   y: number
 }

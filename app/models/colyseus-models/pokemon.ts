@@ -8,6 +8,7 @@ import {
   ItemEvolutionRule
 } from "../../core/evolution-rules"
 import Simulation from "../../core/simulation"
+import { DelayedCommand } from "../../core/simulation-command"
 import GameState from "../../rooms/states/game-state"
 import {
   AttackSprite,
@@ -28,9 +29,9 @@ import {
 } from "../../types/Config"
 import { Ability } from "../../types/enum/Ability"
 import { DungeonDetails, DungeonPMDO } from "../../types/enum/Dungeon"
+import { Effect } from "../../types/enum/Effect"
 import {
   AttackType,
-  BoardEvent,
   PokemonActionState,
   Rarity,
   Stat
@@ -42,7 +43,7 @@ import {
   Item,
   ItemComponents,
   ItemRecipe,
-  SynergyGivenByItem,
+  OgerponMasks,
   SynergyItems
 } from "../../types/enum/Item"
 import { Passive } from "../../types/enum/Passive"
@@ -56,13 +57,11 @@ import { Synergy, SynergyEffects } from "../../types/enum/Synergy"
 import { Weather } from "../../types/enum/Weather"
 import { removeInArray, sum } from "../../utils/array"
 import { getFirstAvailablePositionInBench } from "../../utils/board"
-import { distanceC, distanceM } from "../../utils/distance"
+import { distanceC, distanceE } from "../../utils/distance"
 import { chance, pickRandomIn } from "../../utils/random"
 import { values } from "../../utils/schemas"
 import PokemonFactory from "../pokemon-factory"
 import Player from "./player"
-import { Effect } from "../../types/enum/Effect"
-import { DelayedCommand } from "../../core/simulation-command"
 
 export class Pokemon extends Schema implements IPokemon {
   @type("string") id: string
@@ -90,6 +89,7 @@ export class Pokemon extends Schema implements IPokemon {
   @type("boolean") shiny: boolean
   @type("string") emotion: Emotion
   @type("string") action: PokemonActionState = PokemonActionState.IDLE
+  deathCount: number = 0
   evolutionRule: EvolutionRule = new CountEvolutionRule(3)
   additional = false
   regional = false
@@ -130,6 +130,12 @@ export class Pokemon extends Schema implements IPokemon {
     )
   }
 
+  get luck(): number {
+    let luck = 0
+    if (this.items.has(Item.LUCKY_EGG)) luck += 50
+    return luck
+  }
+
   onChangePosition(x: number, y: number, player: Player) {
     // called after manually changing position of the pokemon on board
   }
@@ -160,9 +166,17 @@ export class Pokemon extends Schema implements IPokemon {
     player: IPlayer
     simulation: Simulation
     team: MapSchema<IPokemonEntity>
+    opponentTeam: MapSchema<IPokemonEntity>
     entity: IPokemonEntity
   }) {
     // called at simulation start after entities are generated
+  }
+
+  onSpawn(params: {
+    entity: IPokemonEntity
+    simulation: Simulation
+  }) {
+    // called after entity is added, either at simulation start or when cloned/spawned
   }
 
   isInRegion(map: DungeonPMDO, state?: GameState) {
@@ -181,10 +195,6 @@ export class Pokemon extends Schema implements IPokemon {
         state.additionalPokemons.includes(variantOf))
     )
   }
-}
-
-export function isOnBench(pokemon: Pokemon): boolean {
-  return pokemon.positionY === 0
 }
 
 export class Ditto extends Pokemon {
@@ -242,7 +252,7 @@ export class Electrike extends Pokemon {
   atk = 15
   def = 5
   speDef = 5
-  maxPP = 60
+  maxPP = 65
   range = 1
   skill = Ability.VOLT_SWITCH
   attackSprite = AttackSprite.ELECTRIC_MELEE
@@ -257,7 +267,7 @@ export class Manectric extends Pokemon {
   atk = 30
   def = 6
   speDef = 6
-  maxPP = 60
+  maxPP = 65
   range = 1
   skill = Ability.VOLT_SWITCH
   attackSprite = AttackSprite.ELECTRIC_MELEE
@@ -271,7 +281,7 @@ export class MegaManectric extends Pokemon {
   atk = 48
   def = 7
   speDef = 7
-  maxPP = 60
+  maxPP = 65
   range = 1
   skill = Ability.VOLT_SWITCH
   attackSprite = AttackSprite.ELECTRIC_MELEE
@@ -507,7 +517,7 @@ export class Scyther extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.BUG, Synergy.FLYING])
   rarity = Rarity.UNIQUE
   stars = 3
-  hp = 190
+  hp = 170
   atk = 19
   def = 5
   speDef = 5
@@ -533,7 +543,7 @@ export class Scizor extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.BUG, Synergy.FLYING, Synergy.STEEL])
   rarity = Rarity.UNIQUE
   stars = 4
-  hp = 190
+  hp = 170
   atk = 25
   def = 7
   speDef = 5
@@ -547,7 +557,7 @@ export class Kleavor extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.BUG, Synergy.ROCK, Synergy.DARK])
   rarity = Rarity.UNIQUE
   stars = 4
-  hp = 190
+  hp = 170
   atk = 25
   def = 7
   speDef = 5
@@ -956,7 +966,7 @@ export class Tympole extends Pokemon {
   atk = 7
   def = 3
   speDef = 3
-  maxPP = 90
+  maxPP = 70
   range = 1
   skill = Ability.SLUDGE_WAVE
   passive = Passive.HATCH
@@ -977,7 +987,7 @@ export class Palpitoad extends Pokemon {
   atk = 17
   def = 4
   speDef = 4
-  maxPP = 90
+  maxPP = 70
   range = 1
   skill = Ability.SLUDGE_WAVE
   passive = Passive.HATCH
@@ -996,7 +1006,7 @@ export class Seismitoad extends Pokemon {
   atk = 22
   def = 6
   speDef = 6
-  maxPP = 90
+  maxPP = 70
   range = 1
   skill = Ability.SLUDGE_WAVE
   attackSprite = AttackSprite.WATER_MELEE
@@ -1257,7 +1267,7 @@ export class Honedge extends Pokemon {
   maxPP = 100
   range = 1
   skill = Ability.KING_SHIELD
-  attackSprite = AttackSprite.DRAGON_MELEE
+  attackSprite = AttackSprite.STEEL_MELEE
 }
 
 export class Doublade extends Pokemon {
@@ -1276,7 +1286,7 @@ export class Doublade extends Pokemon {
   maxPP = 100
   range = 1
   skill = Ability.KING_SHIELD
-  attackSprite = AttackSprite.DRAGON_MELEE
+  attackSprite = AttackSprite.STEEL_MELEE
 }
 
 export class Aegislash extends Pokemon {
@@ -1291,10 +1301,30 @@ export class Aegislash extends Pokemon {
   atk = 23
   def = 7
   speDef = 7
-  maxPP = 100
+  maxPP = 80
   range = 1
   skill = Ability.KING_SHIELD
-  attackSprite = AttackSprite.DRAGON_MELEE
+  passive = Passive.AEGISLASH
+  attackSprite = AttackSprite.STEEL_MELEE
+}
+
+export class AegislashBlade extends Pokemon {
+  types = new SetSchema<Synergy>([
+    Synergy.GHOST,
+    Synergy.STEEL,
+    Synergy.ARTIFICIAL
+  ])
+  rarity = Rarity.RARE
+  stars = 3
+  hp = 230
+  atk = 33
+  def = 2
+  speDef = 2
+  maxPP = 80
+  range = 1
+  skill = Ability.KING_SHIELD
+  passive = Passive.AEGISLASH
+  attackSprite = AttackSprite.STEEL_MELEE
 }
 
 export class Oshawott extends Pokemon {
@@ -3762,7 +3792,7 @@ export class Slowpoke extends Pokemon {
   speDef = 2
   maxPP = 100
   range = 1
-  skill = Ability.SOAK
+  skill = Ability.YAWN
   attackSprite = AttackSprite.WATER_MELEE
   regional = true
 }
@@ -3778,7 +3808,7 @@ export class Slowbro extends Pokemon {
   speDef = 3
   maxPP = 100
   range = 1
-  skill = Ability.SOAK
+  skill = Ability.YAWN
   attackSprite = AttackSprite.WATER_MELEE
   regional = true
 }
@@ -3793,7 +3823,7 @@ export class Slowking extends Pokemon {
   speDef = 4
   maxPP = 100
   range = 1
-  skill = Ability.SOAK
+  skill = Ability.YAWN
   attackSprite = AttackSprite.WATER_MELEE
   regional = true
 }
@@ -4311,7 +4341,7 @@ export class Clefable extends Pokemon {
   atk = 18
   def = 4
   speDef = 4
-  maxPP = 100
+  maxPP = 80
   range = 1
   skill = Ability.METRONOME
   attackSprite = AttackSprite.FAIRY_MELEE
@@ -4874,7 +4904,7 @@ export class Zapdos extends Pokemon {
 }
 
 export class Zeraora extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ELECTRIC, Synergy.WILD])
+  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.ELECTRIC])
   rarity = Rarity.UNIQUE
   stars = 3
   hp = 200
@@ -4951,7 +4981,7 @@ export class Pinsir extends Pokemon {
   atk = 21
   def = 3
   speDef = 3
-  maxPP = 85
+  maxPP = 100
   range = 1
   skill = Ability.GUILLOTINE
   attackSprite = AttackSprite.NORMAL_MELEE
@@ -5208,6 +5238,10 @@ export class Regigigas extends Pokemon {
   skill = Ability.CRUSH_GRIP
   passive = Passive.SLOW_START
   attackSprite = AttackSprite.DRAGON_MELEE
+
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
+    entity.addAttackSpeed(-25, entity, 0, false)
+  }
 }
 
 export class Kyogre extends Pokemon {
@@ -5234,7 +5268,7 @@ export class Groudon extends Pokemon {
   evolution = Pkm.PRIMAL_GROUDON
   evolutionRule = new ItemEvolutionRule([Item.RED_ORB])
   hp = 300
-  atk = 30
+  atk = 20
   def = 5
   speDef = 3
   maxPP = 100
@@ -5432,8 +5466,8 @@ export class Volcanion extends Pokemon {
   stars = 3
   hp = 300
   atk = 20
-  def = 2
-  speDef = 2
+  def = 4
+  speDef = 3
   maxPP = 90
   range = 2
   skill = Ability.STEAM_ERUPTION
@@ -5469,9 +5503,9 @@ export class Larvesta extends Pokemon {
   speDef = 2
   maxPP = 100
   range = 3
-  skill = Ability.FIRE_BLAST
+  skill = Ability.FIERY_DANCE
   additional = true
-  attackSprite = AttackSprite.PSYCHIC_RANGE
+  attackSprite = AttackSprite.FIRE_RANGE
 }
 
 export class Volcarona extends Pokemon {
@@ -5484,9 +5518,9 @@ export class Volcarona extends Pokemon {
   speDef = 2
   maxPP = 100
   range = 3
-  skill = Ability.FIRE_BLAST
+  skill = Ability.FIERY_DANCE
   additional = true
-  attackSprite = AttackSprite.PSYCHIC_RANGE
+  attackSprite = AttackSprite.FIRE_RANGE
 }
 
 export class Chatot extends Pokemon {
@@ -6012,7 +6046,7 @@ export class Azelf extends Pokemon {
 }
 
 export class Mew extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.PSYCHIC])
+  types = new SetSchema<Synergy>([Synergy.PSYCHIC, Synergy.AMORPHOUS])
   rarity = Rarity.LEGENDARY
   stars = 3
   hp = 200
@@ -6048,7 +6082,7 @@ export class Marshadow extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.GHOST, Synergy.FIGHTING])
   rarity = Rarity.LEGENDARY
   stars = 3
-  hp = 250
+  hp = 220
   atk = 28
   def = 5
   speDef = 5
@@ -6062,15 +6096,14 @@ export class Kyurem extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.DRAGON, Synergy.ICE])
   rarity = Rarity.LEGENDARY
   stars = 3
-  hp = 300
+  hp = 200
   atk = 30
-  def = 5
-  speDef = 5
+  def = 3
+  speDef = 6
   maxPP = 100
   range = 3
-  skill = Ability.DEFAULT //Ability.BLIZZARD
-  passive = Passive.NONE // Passive.SNOW
-  attackSprite = AttackSprite.FIRE_RANGE
+  skill = Ability.GLACIATE
+  attackSprite = AttackSprite.ICE_RANGE
 }
 
 export class Reshiram extends Pokemon {
@@ -6131,7 +6164,15 @@ export class Victini extends Pokemon {
   maxPP = 100
   range = 1
   skill = Ability.SEARING_SHOT
+  passive = Passive.VICTINI
   attackSprite = AttackSprite.FIRE_MELEE
+  afterSimulationStart({
+    opponentTeam
+  }: { opponentTeam: MapSchema<IPokemonEntity> }) {
+    opponentTeam.forEach((pokemon) => {
+      pokemon.addDodgeChance(-1, pokemon, 0, false)
+    })
+  }
 }
 
 export class Jirachi extends Pokemon {
@@ -6145,7 +6186,13 @@ export class Jirachi extends Pokemon {
   maxPP = 100
   range = 3
   skill = Ability.DOOM_DESIRE
+  passive = Passive.GOOD_LUCK
   attackSprite = AttackSprite.PSYCHIC_RANGE
+  afterSimulationStart({ team }: { team: MapSchema<IPokemonEntity> }) {
+    team.forEach((pokemon) => {
+      pokemon.addLuck(20, pokemon, 0, false)
+    })
+  }
 }
 
 export class Arceus extends Pokemon {
@@ -6374,7 +6421,7 @@ export class PrimalGroudon extends Pokemon {
   rarity = Rarity.LEGENDARY
   stars = 4
   hp = 400
-  atk = 30
+  atk = 20
   def = 6
   speDef = 3
   maxPP = 100
@@ -6598,10 +6645,33 @@ export class Primeape extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.WILD, Synergy.FIGHTING])
   rarity = Rarity.EPIC
   stars = 2
+  evolution = Pkm.ANNIHILAPE
+  evolutionRule = new ConditionBasedEvolutionRule(
+    (pokemon) => pokemon.atk > 30
+  )
   hp = 240
   atk = 21
   def = 6
   speDef = 2
+  maxPP = 90
+  range = 1
+  skill = Ability.THRASH
+  passive = Passive.PRIMEAPE
+  attackSprite = AttackSprite.FIGHTING_MELEE
+}
+
+export class Annihilape extends Pokemon {
+  types = new SetSchema<Synergy>([
+    Synergy.WILD,
+    Synergy.FIGHTING,
+    Synergy.GHOST
+  ])
+  rarity = Rarity.EPIC
+  stars = 3
+  hp = 320
+  atk = 30
+  def = 6
+  speDef = 7
   maxPP = 90
   range = 1
   skill = Ability.THRASH
@@ -6658,7 +6728,7 @@ export class Wynaut extends Pokemon {
   passive = Passive.WOBBUFFET
   additional = true
   attackSprite = AttackSprite.FIGHTING_MELEE
-  afterSimulationStart({ entity }: { entity: IPokemonEntity }) {
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
     entity.status.tree = true
     entity.toIdleState()
   }
@@ -6678,7 +6748,7 @@ export class Wobbuffet extends Pokemon {
   passive = Passive.WOBBUFFET
   additional = true
   attackSprite = AttackSprite.ROCK_MELEE
-  afterSimulationStart({ entity }: { entity: IPokemonEntity }) {
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
     entity.status.tree = true
     entity.toIdleState()
   }
@@ -7225,7 +7295,7 @@ export class Fennekin extends Pokemon {
   atk = 5
   def = 1
   speDef = 1
-  maxPP = 100
+  maxPP = 90
   range = 2
   skill = Ability.FIRE_TRICK
   attackSprite = AttackSprite.FIRE_RANGE
@@ -7239,7 +7309,7 @@ export class Braixen extends Pokemon {
   atk = 9
   def = 1
   speDef = 1
-  maxPP = 100
+  maxPP = 90
   range = 2
   skill = Ability.FIRE_TRICK
   attackSprite = AttackSprite.FIRE_RANGE
@@ -7252,7 +7322,7 @@ export class Delphox extends Pokemon {
   atk = 18
   def = 1
   speDef = 1
-  maxPP = 100
+  maxPP = 90
   range = 2
   skill = Ability.FIRE_TRICK
   attackSprite = AttackSprite.FIRE_RANGE
@@ -7321,12 +7391,12 @@ export class Eternatus extends Pokemon {
 }
 
 export class Nincada extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.BUG, Synergy.FLYING])
+  types = new SetSchema<Synergy>([Synergy.BUG])
   rarity = Rarity.EPIC
   stars = 1
   evolution = Pkm.NINJASK
-  hp = 100
-  atk = 10
+  hp = 130
+  atk = 13
   def = 5
   speDef = 2
   maxPP = 100
@@ -7611,7 +7681,7 @@ export class Pumpkaboo extends Pokemon {
   speDef = 3
   maxPP = 80
   range = 1
-  skill = Ability.CORRUPTED_NATURE
+  skill = Ability.TRICK_OR_TREAT
   additional = true
   attackSprite = AttackSprite.GRASS_MELEE
 }
@@ -7625,7 +7695,7 @@ export class Gourgeist extends Pokemon {
   speDef = 5
   maxPP = 80
   range = 1
-  skill = Ability.CORRUPTED_NATURE
+  skill = Ability.TRICK_OR_TREAT
   additional = true
   attackSprite = AttackSprite.GRASS_MELEE
 }
@@ -7742,7 +7812,7 @@ export class Buizel extends Pokemon {
   atk = 9
   def = 3
   speDef = 3
-  maxPP = 50
+  maxPP = 65
   range = 1
   skill = Ability.AQUA_JET
   additional = true
@@ -7760,7 +7830,7 @@ export class Floatzel extends Pokemon {
   atk = 24
   def = 5
   speDef = 5
-  maxPP = 50
+  maxPP = 65
   range = 1
   skill = Ability.AQUA_JET
   additional = true
@@ -8069,7 +8139,7 @@ export class Hoothoot extends Pokemon {
   atk = 5
   def = 2
   speDef = 3
-  maxPP = 100
+  maxPP = 90
   range = 1
   skill = Ability.HYPNOSIS
   additional = true
@@ -8088,7 +8158,7 @@ export class Noctowl extends Pokemon {
   atk = 10
   def = 3
   speDef = 5
-  maxPP = 100
+  maxPP = 90
   range = 1
   skill = Ability.HYPNOSIS
   additional = true
@@ -8407,7 +8477,7 @@ export class Voltorb extends Pokemon {
   atk = 9
   def = 1
   speDef = 1
-  maxPP = 80
+  maxPP = 100
   range = 1
   skill = Ability.EXPLOSION
   additional = true
@@ -8422,7 +8492,7 @@ export class Electrode extends Pokemon {
   atk = 18
   def = 3
   speDef = 3
-  maxPP = 80
+  maxPP = 100
   range = 1
   skill = Ability.EXPLOSION
   additional = true
@@ -8844,7 +8914,7 @@ export class Snubull extends Pokemon {
   speDef = 2
   maxPP = 70
   range = 1
-  skill = Ability.BITE
+  skill = Ability.ROAR
   additional = true
   attackSprite = AttackSprite.FAIRY_MELEE
 }
@@ -8859,57 +8929,10 @@ export class Granbull extends Pokemon {
   speDef = 3
   maxPP = 70
   range = 1
-  skill = Ability.BITE
+  skill = Ability.ROAR
   additional = true
   attackSprite = AttackSprite.FAIRY_MELEE
 }
-
-const rksSystemEvolutionRule = new ItemEvolutionRule(
-  [...SynergyItems],
-  (pokemon, player, item) => {
-    const type = SynergyGivenByItem[item as Item] as Synergy
-    switch (type) {
-      case Synergy.FOSSIL:
-        return Pkm.SILVALLY_FOSSIL
-      case Synergy.PSYCHIC:
-        return Pkm.SILVALLY_PSYCHIC
-      case Synergy.WATER:
-        return Pkm.SILVALLY_WATER
-      case Synergy.ELECTRIC:
-        return Pkm.SILVALLY_ELECTRIC
-      case Synergy.FIRE:
-        return Pkm.SILVALLY_FIRE
-      case Synergy.FAIRY:
-        return Pkm.SILVALLY_FAIRY
-      case Synergy.DARK:
-        return Pkm.SILVALLY_DARK
-      case Synergy.GRASS:
-        return Pkm.SILVALLY_GRASS
-      case Synergy.ICE:
-        return Pkm.SILVALLY_ICE
-      case Synergy.FIGHTING:
-        return Pkm.SILVALLY_FIGHTING
-      case Synergy.LIGHT:
-        return Pkm.SILVALLY_LIGHT
-      case Synergy.POISON:
-        return Pkm.SILVALLY_POISON
-      case Synergy.SOUND:
-        return Pkm.SILVALLY_SOUND
-      case Synergy.STEEL:
-        return Pkm.SILVALLY_STEEL
-      case Synergy.FLYING:
-        return Pkm.SILVALLY_FLYING
-      case Synergy.ROCK:
-        return Pkm.SILVALLY_ROCK
-      case Synergy.GROUND:
-        return Pkm.SILVALLY_GROUND
-      case Synergy.GHOST:
-        return Pkm.SILVALLY_GHOST
-      default:
-        return pokemon.name
-    }
-  }
-)
 
 const rksSystemOnChangePosition = function (
   this: Pokemon,
@@ -8948,8 +8971,8 @@ export class TypeNull extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.ARTIFICIAL])
   rarity = Rarity.UNIQUE
   stars = 2
-  evolution = Pkm.SILVALLY_FIRE
-  evolutionRule = rksSystemEvolutionRule
+  evolution = Pkm.SILVALLY
+  evolutionRule = new ItemEvolutionRule([...SynergyItems])
   hp = 200
   atk = 14
   def = 3
@@ -8961,8 +8984,8 @@ export class TypeNull extends Pokemon {
   attackSprite = AttackSprite.NORMAL_MELEE
 }
 
-export class SilvallyFire extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.FIRE])
+export class Silvally extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL])
   rarity = Rarity.UNIQUE
   stars = 3
   hp = 260
@@ -8973,313 +8996,6 @@ export class SilvallyFire extends Pokemon {
   range = 1
   skill = Ability.MULTI_ATTACK
   passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyFossil extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.FOSSIL])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyPsychic extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.PSYCHIC])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyWater extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.WATER])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyElectric extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.ELECTRIC])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyFairy extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.FAIRY])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyDark extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.DARK])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyGrass extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.GRASS])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyIce extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.ICE])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyFighting extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.FIGHTING])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyLight extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.LIGHT])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyPoison extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.POISON])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallySound extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.SOUND])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallySteel extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.STEEL])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyFlying extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.FLYING])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyRock extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.ROCK])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyGround extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.GROUND])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyFlora extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.FLORA])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
-  attackSprite = AttackSprite.NORMAL_MELEE
-  onChangePosition = rksSystemOnChangePosition
-}
-
-export class SilvallyGhost extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.ARTIFICIAL, Synergy.GHOST])
-  rarity = Rarity.UNIQUE
-  stars = 3
-  hp = 260
-  atk = 18
-  def = 5
-  speDef = 5
-  maxPP = 100
-  range = 1
-  skill = Ability.MULTI_ATTACK
-  passive = Passive.RKS_SYSTEM
-  evolutionRule = rksSystemEvolutionRule
   attackSprite = AttackSprite.NORMAL_MELEE
   onChangePosition = rksSystemOnChangePosition
 }
@@ -9355,7 +9071,7 @@ export class Vulpix extends Pokemon {
   atk = 7
   def = 2
   speDef = 2
-  maxPP = 100
+  maxPP = 85
   range = 2
   skill = Ability.FIRE_SPIN
   attackSprite = AttackSprite.FIRE_RANGE
@@ -9370,7 +9086,7 @@ export class Ninetales extends Pokemon {
   atk = 20
   def = 3
   speDef = 5
-  maxPP = 100
+  maxPP = 85
   range = 2
   skill = Ability.FIRE_SPIN
   attackSprite = AttackSprite.FIRE_RANGE
@@ -9747,7 +9463,7 @@ export class Popplio extends Pokemon {
   atk = 5
   def = 2
   speDef = 2
-  maxPP = 80
+  maxPP = 70
   range = 3
   skill = Ability.SPARKLING_ARIA
   passive = Passive.HATCH
@@ -9764,7 +9480,7 @@ export class Brionne extends Pokemon {
   atk = 10
   def = 2
   speDef = 3
-  maxPP = 80
+  maxPP = 70
   range = 3
   skill = Ability.SPARKLING_ARIA
   passive = Passive.HATCH
@@ -9779,7 +9495,7 @@ export class Primarina extends Pokemon {
   atk = 20
   def = 2
   speDef = 4
-  maxPP = 80
+  maxPP = 70
   range = 3
   skill = Ability.SPARKLING_ARIA
   attackSprite = AttackSprite.PSYCHIC_RANGE
@@ -9844,7 +9560,7 @@ export class Sandshrew extends Pokemon {
   speDef = 3
   maxPP = 80
   range = 1
-  skill = Ability.SPIKE_ARMOR
+  skill = Ability.ROLLOUT
   additional = true
   attackSprite = AttackSprite.NORMAL_MELEE
 }
@@ -9859,7 +9575,7 @@ export class Sandslash extends Pokemon {
   speDef = 5
   maxPP = 80
   range = 1
-  skill = Ability.SPIKE_ARMOR
+  skill = Ability.ROLLOUT
   additional = true
   attackSprite = AttackSprite.NORMAL_MELEE
 }
@@ -10976,11 +10692,11 @@ export class Bonsley extends Pokemon {
   speDef = 2
   maxPP = 100
   range = 1
-  skill = Ability.MIMIC
+  skill = Ability.WOOD_HAMMER
   passive = Passive.SUDOWOODO
   additional = true
   attackSprite = AttackSprite.ROCK_MELEE
-  afterSimulationStart({ entity }: { entity: IPokemonEntity }) {
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
     entity.status.tree = true
     entity.toIdleState()
   }
@@ -10996,11 +10712,11 @@ export class Sudowoodo extends Pokemon {
   speDef = 3
   maxPP = 100
   range = 1
-  skill = Ability.MIMIC
+  skill = Ability.WOOD_HAMMER
   passive = Passive.SUDOWOODO
   additional = true
   attackSprite = AttackSprite.ROCK_MELEE
-  afterSimulationStart({ entity }: { entity: IPokemonEntity }) {
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
     entity.status.tree = true
     entity.toIdleState()
   }
@@ -11047,7 +10763,7 @@ export class Shuckle extends Pokemon {
   speDef = 15
   maxPP = 100
   range = 1
-  skill = Ability.SHELL_TRAP
+  skill = Ability.BIDE
   passive = Passive.SHUCKLE
   attackSprite = AttackSprite.ROCK_MELEE
 }
@@ -11400,10 +11116,7 @@ export class MegaSableye extends Pokemon {
   skill = Ability.KNOCK_OFF
   attackSprite = AttackSprite.DARK_MELEE
   passive = Passive.MEGA_SABLEYE
-  afterSimulationStart({
-    entity,
-    player
-  }: { entity: IPokemonEntity; player: IPlayer }) {
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
     entity.status.triggerRuneProtect(60000)
   }
 }
@@ -11495,7 +11208,7 @@ export class Yanma extends Pokemon {
   passive = Passive.CLEAR_WING
   additional = true
   attackSprite = AttackSprite.PSYCHIC_RANGE
-  afterSimulationStart({ entity }: { entity: IPokemonEntity }) {
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
     entity.status.triggerClearWing(1000)
   }
 }
@@ -11514,7 +11227,7 @@ export class Yanmega extends Pokemon {
   passive = Passive.CLEAR_WING
   additional = true
   attackSprite = AttackSprite.PSYCHIC_RANGE
-  afterSimulationStart({ entity }: { entity: IPokemonEntity }) {
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
     entity.status.triggerClearWing(1000)
   }
 }
@@ -11538,7 +11251,7 @@ export class Helioptile extends Pokemon {
   passive = Passive.DRY_SKIN
   additional = true
   attackSprite = AttackSprite.ELECTRIC_RANGE
-  afterSimulationStart({
+  onSpawn({
     entity,
     simulation
   }: { entity: IPokemonEntity; simulation: Simulation }) {
@@ -11699,6 +11412,9 @@ export class Spinda extends Pokemon {
   skill = Ability.TEETER_DANCE
   passive = Passive.SPOT_PANDA
   attackSprite = AttackSprite.NORMAL_MELEE
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
+    entity.effects.add(Effect.IMMUNITY_CONFUSION)
+  }
 }
 
 export class Baltoy extends Pokemon {
@@ -12230,6 +11946,53 @@ export class Pelipper extends Pokemon {
   passive = Passive.DRIZZLE
 }
 
+export class Murkrow extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.DARK, Synergy.FLYING])
+  rarity = Rarity.EPIC
+  stars = 1
+  evolution = Pkm.HONCHKROW
+  hp = 110
+  atk = 9
+  def = 6
+  speDef = 3
+  maxPP = 70
+  range = 1
+  skill = Ability.FOUL_PLAY
+  passive = Passive.BAD_LUCK
+  additional = true
+  attackSprite = AttackSprite.DARK_MELEE
+  afterSimulationStart({
+    opponentTeam
+  }: { opponentTeam: MapSchema<IPokemonEntity> }) {
+    opponentTeam.forEach((pokemon) => {
+      pokemon.addLuck(-20, pokemon, 0, false)
+    })
+  }
+}
+
+export class Honchkrow extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.DARK, Synergy.FLYING])
+  rarity = Rarity.EPIC
+  stars = 2
+  hp = 220
+  atk = 24
+  def = 8
+  speDef = 5
+  maxPP = 70
+  range = 1
+  skill = Ability.FOUL_PLAY
+  passive = Passive.BAD_LUCK
+  additional = true
+  attackSprite = AttackSprite.DARK_MELEE
+  afterSimulationStart({
+    opponentTeam
+  }: { opponentTeam: MapSchema<IPokemonEntity> }) {
+    opponentTeam.forEach((pokemon) => {
+      pokemon.addLuck(-20, pokemon, 0, false)
+    })
+  }
+}
+
 export class Zigzagoon extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.WILD, Synergy.FIELD])
   rarity = Rarity.RARE
@@ -12595,11 +12358,8 @@ export class Gholdengo extends Pokemon {
   skill = Ability.MAKE_IT_RAIN
   attackSprite = AttackSprite.DRAGON_MELEE
   passive = Passive.GHOLDENGO
-  afterSimulationStart({
-    entity,
-    player
-  }: { entity: IPokemonEntity; player: IPlayer }) {
-    if (player.money >= 50) {
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
+    if (entity.player && entity.player.money >= 50) {
       entity.status.triggerRuneProtect(60000)
     }
   }
@@ -12685,13 +12445,13 @@ export class Comfey extends Pokemon {
     if (alliesWithFreeSlots.length > 0) {
       alliesWithFreeSlots.sort(
         (a, b) =>
-          distanceM(
+          distanceE(
             a.positionX,
             a.positionY,
             entity.positionX,
             entity.positionY
           ) -
-          distanceM(
+          distanceE(
             b.positionX,
             b.positionY,
             entity.positionX,
@@ -12851,7 +12611,7 @@ export class Corsola extends Pokemon {
   passive = Passive.CORSOLA
   evolution = Pkm.GALAR_CORSOLA
   evolutionRule = new ConditionBasedEvolutionRule(
-    (pokemon, player, stageLevel) => stageLevel >= 99 // natural death
+    (pokemon) => pokemon.deathCount > 0
   )
   regional = true
 }
@@ -12906,15 +12666,17 @@ export class Smeargle extends Pokemon {
   skill = Ability.SKETCH
   attackSprite = AttackSprite.NORMAL_MELEE
 
-  afterSimulationStart({ player, entity }) {
-    const allyOnTheLeft = player.getPokemonAt(
-      this.positionX - 1,
-      this.positionY
-    )
-    if (allyOnTheLeft) {
-      entity.maxPP = allyOnTheLeft.maxPP
-      entity.skill = allyOnTheLeft.skill
-      entity.stars = allyOnTheLeft.stars
+  onSpawn({ entity }) {
+    if (entity.player) {
+      const allyOnTheLeft = entity.player.getPokemonAt(
+        this.positionX - 1,
+        this.positionY
+      )
+      if (allyOnTheLeft) {
+        entity.maxPP = allyOnTheLeft.maxPP
+        entity.skill = allyOnTheLeft.skill
+        entity.stars = allyOnTheLeft.stars
+      }
     }
   }
 }
@@ -13246,8 +13008,9 @@ export class Ambipom extends Pokemon {
 }
 
 export class Deerling extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.GRASS])
+  types = new SetSchema<Synergy>([Synergy.NORMAL, Synergy.GRASS])
   rarity = Rarity.RARE
+  additional = true
   stars = 1
   evolution = Pkm.SAWSBUCK
   hp = 80
@@ -13261,8 +13024,9 @@ export class Deerling extends Pokemon {
 }
 
 export class Sawsbuck extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.GRASS])
+  types = new SetSchema<Synergy>([Synergy.NORMAL, Synergy.GRASS])
   rarity = Rarity.RARE
+  additional = true
   stars = 2
   hp = 180
   atk = 14
@@ -13920,7 +13684,7 @@ export class Tangrowth extends Pokemon {
 }
 
 export class Phanpy extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.GROUND, Synergy.WILD, Synergy.BABY])
+  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.GROUND, Synergy.BABY])
   rarity = Rarity.RARE
   evolution = Pkm.DONPHAN
   stars = 1
@@ -13935,7 +13699,7 @@ export class Phanpy extends Pokemon {
 }
 
 export class Donphan extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.GROUND, Synergy.WILD])
+  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.GROUND])
   rarity = Rarity.RARE
   stars = 2
   hp = 180
@@ -14383,7 +14147,7 @@ export class GastrodonEastSea extends Pokemon {
 }
 
 export class Rufflet extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.FLYING, Synergy.WILD])
+  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.FLYING])
   rarity = Rarity.UNCOMMON
   stars = 1
   evolution = Pkm.BRAVIARY
@@ -14399,7 +14163,7 @@ export class Rufflet extends Pokemon {
 }
 
 export class Braviary extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.FLYING, Synergy.WILD])
+  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.FLYING])
   rarity = Rarity.UNCOMMON
   stars = 2
   hp = 160
@@ -14462,6 +14226,10 @@ export class Stonjourner extends Pokemon {
   skill = Ability.GRAVITY
   passive = Passive.STONJOURNER
   attackSprite = AttackSprite.ROCK_MELEE
+  onSpawn({ entity }: { entity: IPokemonEntity }) {
+    entity.status.tree = true
+    entity.toIdleState()
+  }
   afterSimulationStart({
     entity,
     simulation
@@ -14473,8 +14241,6 @@ export class Stonjourner extends Pokemon {
           cell.value.addAbilityPower(50, cell.value, 0, false)
         }
       })
-    entity.status.tree = true
-    entity.toIdleState()
   }
 }
 
@@ -14761,7 +14527,7 @@ export class Mantine extends Pokemon {
 }
 
 export class Remoraid extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.WATER, Synergy.WILD])
+  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.WATER])
   rarity = Rarity.SPECIAL
   evolution = Pkm.OCTILLERY
   stars = 1
@@ -14787,7 +14553,7 @@ export class Remoraid extends Pokemon {
 }
 
 export class Octillery extends Pokemon {
-  types = new SetSchema<Synergy>([Synergy.WATER, Synergy.WILD])
+  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.WATER])
   rarity = Rarity.SPECIAL
   stars = 2
   hp = 150
@@ -14795,7 +14561,7 @@ export class Octillery extends Pokemon {
   def = 3
   speDef = 3
   maxPP = 100
-  range = 2
+  range = 3
   skill = Ability.OKTZOOKA
   attackSprite = AttackSprite.WATER_RANGE
 }
@@ -14875,8 +14641,8 @@ export class Sandile extends Pokemon {
   stars = 1
   evolution = Pkm.KROKOROK
   evolutionRule = new HatchEvolutionRule(EvolutionTime.EVOLVE_HATCH)
-  hp = 100
-  atk = 10
+  hp = 80
+  atk = 6
   def = 2
   speDef = 2
   maxPP = 80
@@ -14896,8 +14662,8 @@ export class Krokorok extends Pokemon {
   stars = 2
   evolution = Pkm.KROOKODILE
   evolutionRule = new HatchEvolutionRule(EvolutionTime.EVOLVE_HATCH)
-  hp = 180
-  atk = 18
+  hp = 150
+  atk = 13
   def = 3
   speDef = 3
   maxPP = 80
@@ -14915,10 +14681,10 @@ export class Krookodile extends Pokemon {
   ])
   rarity = Rarity.HATCH
   stars = 3
-  hp = 240
-  atk = 24
-  def = 5
-  speDef = 5
+  hp = 220
+  atk = 22
+  def = 4
+  speDef = 4
   maxPP = 80
   range = 1
   skill = Ability.FOUL_PLAY
@@ -14938,7 +14704,7 @@ export class Binacle extends Pokemon {
   range = 1
   skill = Ability.STONE_EDGE
   additional = true
-  attackSprite = AttackSprite.ROCK_MELEE
+  attackSprite = AttackSprite.ROCK_RANGE
 }
 
 export class Barbaracle extends Pokemon {
@@ -14953,7 +14719,7 @@ export class Barbaracle extends Pokemon {
   range = 1
   skill = Ability.STONE_EDGE
   additional = true
-  attackSprite = AttackSprite.ROCK_MELEE
+  attackSprite = AttackSprite.ROCK_RANGE
 }
 
 export class Skarmory extends Pokemon {
@@ -14961,19 +14727,18 @@ export class Skarmory extends Pokemon {
   rarity = Rarity.UNIQUE
   stars = 3
   hp = 190
-  atk = 16
+  atk = 18
   def = 8
-  speDef = 2
+  speDef = 4
   maxPP = 80
   range = 1
   skill = Ability.ROAR
   attackSprite = AttackSprite.STEEL_MELEE
   passive = Passive.SKARMORY
 
-  afterSimulationStart(params: {
+  onSpawn(params: {
     player: IPlayer
     simulation: Simulation
-    team: MapSchema<IPokemonEntity>
     entity: IPokemonEntity
   }) {
     params.entity.commands.push(
@@ -14983,18 +14748,8 @@ export class Skarmory extends Pokemon {
         const entity = params.entity
 
         board.forEach((x, y, tg) => {
-          const index = y * board.columns + x
-          if (!tg && chance(0.3)) {
-            if (board.effects[index] !== Effect.SPIKES) {
-              board.effects[index] = Effect.SPIKES
-              simulation.room.broadcast(Transfer.BOARD_EVENT, {
-                simulationId: simulation.id,
-                type: BoardEvent.SPIKES,
-                x: x,
-                y: y
-              })
-            }
-
+          if (!tg && chance(0.3, entity)) {
+            board.addBoardEffect(x, y, Effect.SPIKES, simulation)
             simulation.room.broadcast(Transfer.ABILITY, {
               id: simulation.id,
               skill: Ability.SPIKES,
@@ -15019,12 +14774,7 @@ function ogerponOnAcquired(
     | Item.TEAL_MASK
     | null
 ) {
-  ;[
-    Item.WELLSPRING_MASK,
-    Item.CORNERSTONE_MASK,
-    Item.HEARTHFLAME_MASK,
-    Item.TEAL_MASK
-  ].forEach((mask) => {
+  OgerponMasks.forEach((mask) => {
     if (!player.items.includes(mask) && mask !== currentMask) {
       player.items.push(mask)
     }
@@ -15185,6 +14935,181 @@ export class IronHands extends Pokemon {
   range = 1
   skill = Ability.FORCE_PALM
   attackSprite = AttackSprite.FIGHTING_MELEE
+}
+
+export class Rookidee extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.STEEL, Synergy.FLYING])
+  rarity = Rarity.RARE
+  stars = 1
+  evolution = Pkm.CORVISQUIRE
+  hp = 80
+  atk = 6
+  def = 4
+  speDef = 2
+  maxPP = 90
+  range = 1
+  skill = Ability.STEEL_WING
+  attackSprite = AttackSprite.FLYING_MELEE
+  regional = true
+}
+
+export class Corvisquire extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.STEEL, Synergy.FLYING])
+  rarity = Rarity.RARE
+  stars = 2
+  evolution = Pkm.CORVIKNIGHT
+  hp = 130
+  atk = 10
+  def = 6
+  speDef = 3
+  maxPP = 90
+  range = 1
+  skill = Ability.STEEL_WING
+  attackSprite = AttackSprite.FLYING_MELEE
+  regional = true
+}
+
+export class Corviknight extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.STEEL, Synergy.FLYING])
+  rarity = Rarity.RARE
+  stars = 3
+  hp = 220
+  atk = 20
+  def = 8
+  speDef = 4
+  maxPP = 90
+  range = 1
+  skill = Ability.STEEL_WING
+  attackSprite = AttackSprite.FLYING_MELEE
+  regional = true
+}
+export class Turtonator extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.DRAGON, Synergy.FIRE])
+  rarity = Rarity.UNIQUE
+  stars = 3
+  hp = 200
+  atk = 13
+  def = 7
+  speDef = 5
+  maxPP = 100
+  range = 1
+  skill = Ability.SHELL_TRAP
+  attackSprite = AttackSprite.DRAGON_MELEE
+}
+
+export class Sandygast extends Pokemon {
+  types = new SetSchema<Synergy>([
+    Synergy.GHOST,
+    Synergy.GROUND,
+    Synergy.AMORPHOUS
+  ])
+  rarity = Rarity.UNCOMMON
+  stars = 1
+  evolution = Pkm.PALOSSAND
+  hp = 60
+  atk = 5
+  def = 3
+  speDef = 1
+  maxPP = 90
+  range = 1
+  skill = Ability.SHORE_UP
+  additional = true
+  attackSprite = AttackSprite.WATER_MELEE
+}
+
+export class Palossand extends Pokemon {
+  types = new SetSchema<Synergy>([
+    Synergy.GHOST,
+    Synergy.GROUND,
+    Synergy.AMORPHOUS
+  ])
+  rarity = Rarity.UNCOMMON
+  stars = 2
+  hp = 150
+  atk = 10
+  def = 4
+  speDef = 2
+  maxPP = 90
+  range = 1
+  skill = Ability.SHORE_UP
+  additional = true
+  attackSprite = AttackSprite.WATER_MELEE
+}
+
+export class Skorupi extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.BUG, Synergy.POISON])
+  rarity = Rarity.RARE
+  stars = 1
+  evolution = Pkm.DRAPION
+  hp = 90
+  atk = 8
+  def = 4
+  speDef = 1
+  maxPP = 100
+  range = 1
+  skill = Ability.POISON_STING
+  additional = true
+  attackSprite = AttackSprite.BUG_MELEE
+}
+
+export class Drapion extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.BUG, Synergy.POISON, Synergy.DARK])
+  rarity = Rarity.RARE
+  stars = 2
+  hp = 180
+  atk = 16
+  def = 6
+  speDef = 2
+  maxPP = 100
+  range = 1
+  skill = Ability.POISON_STING
+  additional = true
+  attackSprite = AttackSprite.BUG_MELEE
+}
+
+export class Darumaka extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.FIRE, Synergy.PSYCHIC])
+  rarity = Rarity.EPIC
+  stars = 1
+  evolution = Pkm.DARMANITAN
+  hp = 80
+  atk = 12
+  def = 1
+  speDef = 1
+  maxPP = 100
+  range = 1
+  skill = Ability.HEADBUTT
+  attackSprite = AttackSprite.FIRE_MELEE
+}
+
+export class Darmanitan extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.FIRE, Synergy.PSYCHIC])
+  rarity = Rarity.EPIC
+  stars = 2
+  hp = 220
+  atk = 26
+  def = 1
+  speDef = 1
+  maxPP = 100
+  range = 1
+  skill = Ability.HEADBUTT
+  passive = Passive.DARMANITAN
+  attackSprite = AttackSprite.FIRE_MELEE
+}
+
+export class DarmanitanZen extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.WILD, Synergy.FIRE, Synergy.PSYCHIC])
+  rarity = Rarity.EPIC
+  stars = 2
+  hp = 220
+  atk = 16
+  def = 6
+  speDef = 6
+  maxPP = 100
+  range = 1
+  skill = Ability.TRANSE
+  passive = Passive.DARMANITAN_ZEN
+  attackSprite = AttackSprite.FIRE_MELEE
 }
 
 export const PokemonClasses: Record<
@@ -15524,6 +15449,7 @@ export const PokemonClasses: Record<
   [Pkm.HONEDGE]: Honedge,
   [Pkm.DOUBLADE]: Doublade,
   [Pkm.AEGISLASH]: Aegislash,
+  [Pkm.AEGISLASH_BLADE]: AegislashBlade,
   [Pkm.CUBONE]: Cubone,
   [Pkm.MAROWAK]: Marowak,
   [Pkm.ALOLAN_MAROWAK]: AlolanMarowak,
@@ -15778,6 +15704,7 @@ export const PokemonClasses: Record<
   [Pkm.MILTANK]: Miltank,
   [Pkm.MANKEY]: Mankey,
   [Pkm.PRIMEAPE]: Primeape,
+  [Pkm.ANNIHILAPE]: Annihilape,
   [Pkm.SUNKERN]: Sunkern,
   [Pkm.SUNFLORA]: Sunflora,
   [Pkm.MARACTUS]: Maractus,
@@ -15915,24 +15842,7 @@ export const PokemonClasses: Record<
   [Pkm.SPINARAK]: Spinarak,
   [Pkm.ARIADOS]: Ariados,
   [Pkm.TYPE_NULL]: TypeNull,
-  [Pkm.SILVALLY_FIRE]: SilvallyFire,
-  [Pkm.SILVALLY_FOSSIL]: SilvallyFossil,
-  [Pkm.SILVALLY_PSYCHIC]: SilvallyPsychic,
-  [Pkm.SILVALLY_WATER]: SilvallyWater,
-  [Pkm.SILVALLY_ELECTRIC]: SilvallyElectric,
-  [Pkm.SILVALLY_FAIRY]: SilvallyFairy,
-  [Pkm.SILVALLY_DARK]: SilvallyDark,
-  [Pkm.SILVALLY_GRASS]: SilvallyGrass,
-  [Pkm.SILVALLY_ICE]: SilvallyIce,
-  [Pkm.SILVALLY_FIGHTING]: SilvallyFighting,
-  [Pkm.SILVALLY_LIGHT]: SilvallyLight,
-  [Pkm.SILVALLY_POISON]: SilvallyPoison,
-  [Pkm.SILVALLY_SOUND]: SilvallySound,
-  [Pkm.SILVALLY_STEEL]: SilvallySteel,
-  [Pkm.SILVALLY_FLYING]: SilvallyFlying,
-  [Pkm.SILVALLY_ROCK]: SilvallyRock,
-  [Pkm.SILVALLY_GROUND]: SilvallyGround,
-  [Pkm.SILVALLY_GHOST]: SilvallyGhost,
+  [Pkm.SILVALLY]: Silvally,
   [Pkm.DEWPIDER]: Dewpider,
   [Pkm.ARAQUANID]: Araquanid,
   [Pkm.ROCKRUFF]: Rockruff,
@@ -16047,5 +15957,18 @@ export const PokemonClasses: Record<
   [Pkm.OGERPON_HEARTHFLAME_MASK]: OgerponHearthflameMask,
   [Pkm.OGERPON_CORNERSTONE]: OgerponCornerstone,
   [Pkm.OGERPON_CORNERSTONE_MASK]: OgerponCornerstoneMask,
-  [Pkm.IRON_HANDS]: IronHands
+  [Pkm.IRON_HANDS]: IronHands,
+  [Pkm.ROOKIDEE]: Rookidee,
+  [Pkm.CORVISQUIRE]: Corvisquire,
+  [Pkm.CORVIKNIGHT]: Corviknight,
+  [Pkm.MURKROW]: Murkrow,
+  [Pkm.HONCHKROW]: Honchkrow,
+  [Pkm.TURTONATOR]: Turtonator,
+  [Pkm.SANDYGAST]: Sandygast,
+  [Pkm.PALOSSAND]: Palossand,
+  [Pkm.SKORUPI]: Skorupi,
+  [Pkm.DRAPION]: Drapion,
+  [Pkm.DARUMAKA]: Darumaka,
+  [Pkm.DARMANITAN]: Darmanitan,
+  [Pkm.DARMANITAN_ZEN]: DarmanitanZen
 }

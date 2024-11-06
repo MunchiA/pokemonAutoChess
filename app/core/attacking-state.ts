@@ -9,7 +9,10 @@ import Board from "./board"
 import { PokemonEntity } from "./pokemon-entity"
 import PokemonState from "./pokemon-state"
 import { AttackCommand } from "./simulation-command"
-import { getAttackTimings } from "../public/src/game/animation-manager"
+import delays from "../types/delays.json"
+import { IPokemonEntity } from "../types"
+import { PROJECTILE_SPEED } from "../types/Config"
+import { max } from "../utils/number"
 
 export default class AttackingState extends PokemonState {
   name = "attacking"
@@ -38,8 +41,7 @@ export default class AttackingState extends PokemonState {
       } else if (
         !(
           target &&
-          target.team !== pokemon.team &&
-          target.isTargettable &&
+          target.isTargettableBy(pokemon) &&
           distanceC(
             pokemon.positionX,
             pokemon.positionY,
@@ -75,7 +77,7 @@ export default class AttackingState extends PokemonState {
         // CAST ABILITY
         let crit = false
         if (pokemon.items.has(Item.REAPER_CLOTH)) {
-          crit = chance(pokemon.critChance / 100)
+          crit = chance(pokemon.critChance / 100, pokemon)
         }
         AbilityStrategies[pokemon.skill].process(
           pokemon,
@@ -124,4 +126,24 @@ export default class AttackingState extends PokemonState {
     pokemon.targetX = -1
     pokemon.targetY = -1
   }
+}
+
+export function getAttackTimings(pokemon: IPokemonEntity): {
+  delayBeforeShoot: number
+  travelTime: number
+  attackDuration: number
+} {
+  const attackDuration = 1000 / pokemon.atkSpeed
+  const d = delays[pokemon.index]?.d || 18 // number of frames before hit
+  const t = delays[pokemon.index]?.t || 36 // total number of frames in the animation
+
+  const delayBeforeShoot = max(attackDuration / 2)((attackDuration * d) / t)
+  const distance = distanceC(
+    pokemon.targetX,
+    pokemon.targetY,
+    pokemon.positionX,
+    pokemon.positionY
+  )
+  const travelTime = (distance * 1000) / PROJECTILE_SPEED
+  return { delayBeforeShoot, travelTime, attackDuration }
 }

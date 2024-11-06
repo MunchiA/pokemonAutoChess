@@ -23,7 +23,7 @@ import { SpecialGameRule } from "../../types/enum/SpecialGameRule"
 import { Synergy } from "../../types/enum/Synergy"
 import { Weather } from "../../types/enum/Weather"
 import { removeInArray } from "../../utils/array"
-import { getFirstAvailablePositionInBench } from "../../utils/board"
+import { getFirstAvailablePositionInBench, isOnBench } from "../../utils/board"
 import { pickNRandomIn, pickRandomIn } from "../../utils/random"
 import { resetArraySchema, values } from "../../utils/schemas"
 import { Effects } from "../effects"
@@ -35,7 +35,7 @@ import {
 } from "../precomputed/precomputed-pokemon-data"
 import ExperienceManager from "./experience-manager"
 import HistoryItem from "./history-item"
-import { Pokemon, PokemonClasses, isOnBench } from "./pokemon"
+import { Pokemon, PokemonClasses } from "./pokemon"
 import PokemonCollection from "./pokemon-collection"
 import PokemonConfig from "./pokemon-config"
 import Synergies, { computeSynergies } from "./synergies"
@@ -51,7 +51,7 @@ export default class Player extends Schema implements IPlayer {
   @type(ExperienceManager) experienceManager = new ExperienceManager()
   @type({ map: "uint8" }) synergies = new Synergies()
   @type("uint16") money = process.env.MODE == "dev" ? 999 : 5
-  @type("int8") life = 100
+  @type("int16") life = 100
   @type("boolean") shopLocked: boolean = false
   @type("uint8") shopFreeRolls: number = 0
   @type("uint8") streak: number = 0
@@ -84,10 +84,11 @@ export default class Player extends Schema implements IPlayer {
   @type("string") map: DungeonPMDO
   @type({ set: "string" }) effects: Effects = new Effects()
   @type(["string"]) regionalPokemons = new ArraySchema<Pkm>()
-  @type("uint8") rerollCount: number = 0
-  @type("uint8") totalMoneyEarned: number = 0
-  @type("uint8") totalPlayerDamageDealt: number = 0
+  @type("uint16") rerollCount: number = 0
+  @type("uint16") totalMoneyEarned: number = 0
+  @type("uint16") totalPlayerDamageDealt: number = 0
   @type("float32") eggChance: number = 0
+  @type("float32") wildChance: number = 0
   commonRegionalPool: Pkm[] = new Array<Pkm>()
   uncommonRegionalPool: Pkm[] = new Array<Pkm>()
   rareRegionalPool: Pkm[] = new Array<Pkm>()
@@ -97,13 +98,12 @@ export default class Player extends Schema implements IPlayer {
   opponents: Map<string, number> = new Map<string, number>()
   titles: Set<Title> = new Set<Title>()
   artificialItems: Item[] = pickNRandomIn(ArtificialItems, 3)
-  weatherRocks: Item[] = pickNRandomIn(WeatherRocks, 3)
+  weatherRocks: Item[] = []
   randomComponentsGiven: Item[] = []
   randomEggsGiven: Pkm[] = []
   lightX: number
   lightY: number
   canRegainLife: boolean = true
-  wildChance: number = 0
   ghost: boolean = false
 
   constructor(
@@ -143,6 +143,8 @@ export default class Player extends Schema implements IPlayer {
     if (state.specialGameRule === SpecialGameRule.NINE_LIVES) {
       this.life = 9
       this.canRegainLife = false
+    } else if (state.specialGameRule === SpecialGameRule.DESPERATE_MOVES) {
+      this.life = 150
     }
 
     const randomStarter = state.shop.getRandomPokemonFromPool(
@@ -242,21 +244,12 @@ export default class Player extends Schema implements IPlayer {
     const pokemons: Pokemon[] = values(this.board)
     let updatedSynergies = computeSynergies(pokemons)
 
-    this.updateFishingRods(updatedSynergies)
     const artifNeedsRecomputing = this.updateArtificialItems(updatedSynergies)
     if (artifNeedsRecomputing) {
       /* NOTE: computing twice is costly in performance but the safest way to get the synergies
       right after losing an artificial item, since many edgecases may need to be adressed when 
       losing a type (Axew double dragon + artif item for example) ; it's not as easy as just 
       decrementing by 1 in updatedSynergies map count
-      */
-      updatedSynergies = computeSynergies(pokemons)
-    }
-
-    const rockNeedsRecomputing = this.updateWeatherRocks(updatedSynergies)
-    if (rockNeedsRecomputing) {
-      /* NOTE: in some edge cases like losing Hard Rock artif item, we may need to compute synergies
-        3 times in a row to get the right synergies, since losing a weather rock item may lead to losing a type
       */
       updatedSynergies = computeSynergies(pokemons)
     }
@@ -274,11 +267,10 @@ export default class Player extends Schema implements IPlayer {
 
     if (lightChanged) this.onLightChange()
 
+    this.updateFishingRods()
+    this.updateWeatherRocks()
+    this.updateWildChance()
     this.effects.update(this.synergies, this.board)
-    this.wildChance =
-      pokemons
-        .filter((p) => p.types.has(Synergy.WILD))
-        .reduce((total, p) => total + p.stars, 0) / 100
   }
 
   updateArtificialItems(updatedSynergies: Map<Synergy, number>): boolean {
@@ -350,62 +342,28 @@ export default class Player extends Schema implements IPlayer {
     return needsRecomputingSynergiesAgain
   }
 
-  updateWeatherRocks(updatedSynergies: Map<Synergy, number>): boolean {
-    let needsRecomputingSynergiesAgain = false
-    const previousNbRockItems = SynergyTriggers[Synergy.ROCK].filter(
+  updateWeatherRocks() {
+    const nbWeatherRocks = SynergyTriggers[Synergy.ROCK].filter(
       (n) => (this.synergies.get(Synergy.ROCK) ?? 0) >= n
     ).length
+    const rocksCollected = this.weatherRocks.slice(-nbWeatherRocks)
 
-    const newNbRockItems = SynergyTriggers[Synergy.ROCK].filter(
-      (n) => (updatedSynergies.get(Synergy.ROCK) ?? 0) >= n
-    ).length
-
-    if (newNbRockItems > previousNbRockItems) {
-      // some weather rocks are gained
-      const gainedWeatherRocks = this.weatherRocks.slice(
-        previousNbRockItems,
-        newNbRockItems
+    let weatherRockInInventory
+    do {
+      weatherRockInInventory = this.items.findIndex((item, index) =>
+        WeatherRocks.includes(item)
       )
-      gainedWeatherRocks.forEach((item) => {
-        this.items.push(item)
-      })
-    } else if (newNbRockItems < previousNbRockItems) {
-      // some weather rocks are lost
-      const lostWeatherRocks = this.weatherRocks.slice(
-        newNbRockItems,
-        previousNbRockItems
-      )
+      if (weatherRockInInventory != -1) {
+        this.items.splice(weatherRockInInventory, 1)
+      }
+    } while (weatherRockInInventory != -1)
 
-      this.board.forEach((pokemon) => {
-        lostWeatherRocks.forEach((item) => {
-          if (pokemon.items.has(item)) {
-            pokemon.items.delete(item)
-
-            if (item in SynergyGivenByItem) {
-              const type = SynergyGivenByItem[item]
-              const nativeTypes = getPokemonData(pokemon.name).types
-              if (nativeTypes.includes(type) === false) {
-                pokemon.types.delete(type)
-                if (!isOnBench(pokemon)) {
-                  needsRecomputingSynergiesAgain = true
-                }
-              }
-            }
-          }
-        })
-      })
-
-      lostWeatherRocks.forEach((item) => {
-        removeInArray<Item>(this.items, item)
-      })
-    }
-
-    return needsRecomputingSynergiesAgain
+    this.items.push(...rocksCollected)
   }
 
-  updateFishingRods(updatedSynergies: Map<Synergy, number>) {
+  updateFishingRods() {
     const fishingLevel = SynergyTriggers[Synergy.WATER].filter(
-      (n) => (updatedSynergies.get(Synergy.WATER) ?? 0) >= n
+      (n) => (this.synergies.get(Synergy.WATER) ?? 0) >= n
     ).length
 
     if (this.items.includes(Item.OLD_ROD) && fishingLevel !== 1)
@@ -421,6 +379,13 @@ export default class Player extends Schema implements IPlayer {
       this.items.push(Item.GOOD_ROD)
     if (this.items.includes(Item.SUPER_ROD) === false && fishingLevel === 3)
       this.items.push(Item.SUPER_ROD)
+  }
+
+  updateWildChance() {
+    this.wildChance =
+      values(this.board)
+        .filter((p) => p.types.has(Synergy.WILD))
+        .reduce((total, p) => total + p.stars * (1 + p.luck / 100), 0) / 100
   }
 
   updateRegionalPool(state: GameState, mapChanged: boolean) {

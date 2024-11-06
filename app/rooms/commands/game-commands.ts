@@ -12,7 +12,7 @@ import { canSell } from "../../core/pokemon-entity"
 import Simulation from "../../core/simulation"
 import { getLevelUpCost } from "../../models/colyseus-models/experience-manager"
 import Player from "../../models/colyseus-models/player"
-import { isOnBench, PokemonClasses } from "../../models/colyseus-models/pokemon"
+import { PokemonClasses } from "../../models/colyseus-models/pokemon"
 import { createRandomEgg } from "../../models/egg-factory"
 import PokemonFactory from "../../models/pokemon-factory"
 import { PVEStages } from "../../models/pve-stages"
@@ -47,10 +47,11 @@ import {
   Item,
   ItemComponents,
   ItemRecipe,
+  NonHoldableItems,
+  OgerponMasks,
   ShinyItems,
   SynergyGivenByItem,
-  SynergyItems,
-  WeatherRocks
+  SynergyItems
 } from "../../types/enum/Item"
 import { Passive } from "../../types/enum/Passive"
 import {
@@ -67,6 +68,7 @@ import {
   getFirstAvailablePositionOnBoard,
   getFreeSpaceOnBench,
   getMaxTeamSize,
+  isOnBench,
   isPositionEmpty
 } from "../../utils/board"
 import { repeat } from "../../utils/function"
@@ -472,26 +474,22 @@ export class OnDragDropItemCommand extends Command<
       return
     }
 
-    if (
-      item === Item.TEAL_MASK ||
-      item === Item.WELLSPRING_MASK ||
-      item === Item.HEARTHFLAME_MASK ||
-      item === Item.CORNERSTONE_MASK
-    ) {
+    if (OgerponMasks.includes(item)) {
       if (
         pokemon.passive === Passive.OGERPON_TEAL ||
         pokemon.passive === Passive.OGERPON_WELLSPRING ||
         pokemon.passive === Passive.OGERPON_HEARTHFLAME ||
         pokemon.passive === Passive.OGERPON_CORNERSTONE
       ) {
-        if (pokemon.passive === Passive.OGERPON_TEAL) {
-          pokemon.items.delete(Item.TEAL_MASK)
-        } else if (pokemon.passive === Passive.OGERPON_WELLSPRING) {
-          pokemon.items.delete(Item.WELLSPRING_MASK)
-        } else if (pokemon.passive === Passive.OGERPON_HEARTHFLAME) {
-          pokemon.items.delete(Item.HEARTHFLAME_MASK)
-        } else if (pokemon.passive === Passive.OGERPON_CORNERSTONE) {
-          pokemon.items.delete(Item.CORNERSTONE_MASK)
+        const currentMask = values(pokemon.items).find((i) =>
+          OgerponMasks.includes(i)
+        )
+        if (currentMask) {
+          pokemon.items.delete(currentMask)
+        } else if (pokemon.items.size >= 3) {
+          // full, can't hold mask
+          client.send(Transfer.DRAG_DROP_FAILED, message)
+          return
         }
 
         if (item === Item.TEAL_MASK) {
@@ -514,30 +512,27 @@ export class OnDragDropItemCommand extends Command<
     }
 
     if (item === Item.FIRE_SHARD) {
-      if (pokemon.types.has(Synergy.FIRE) && player.life > 2) {
-        pokemon.atk += 2
-        player.life = min(1)(player.life - 2)
+      if (pokemon.types.has(Synergy.FIRE) && player.life > 3) {
+        pokemon.atk += 3
+        player.life = min(1)(player.life - 3)
         removeInArray(player.items, item)
       }
       client.send(Transfer.DRAG_DROP_FAILED, message)
       return
     }
 
-    if (
-      item === Item.OLD_ROD ||
-      item === Item.GOOD_ROD ||
-      item === Item.SUPER_ROD
-    ) {
-      client.send(Transfer.DRAG_DROP_FAILED, message)
-      return
-    }
-
-    if (!pokemon.canHoldItems) {
-      client.send(Transfer.DRAG_DROP_FAILED, message)
-      return
-    }
-
     if (item === Item.EVIOLITE && pokemon.evolution === Pkm.DEFAULT) {
+      client.send(Transfer.DRAG_DROP_FAILED, message)
+      return
+    }
+
+    if (item === Item.BLACK_AUGURITE && pokemon.passive === Passive.SCYTHER) {
+      pokemon.items.add(item) // add the item just in time for the evolution
+      pokemon.evolutionRule.tryEvolve(pokemon, player, this.state.stageLevel)
+      pokemon.items.delete(item) // retrieve the item, black augurite is not a held item
+    }
+
+    if (NonHoldableItems.includes(item) || !pokemon.canHoldItems) {
       client.send(Transfer.DRAG_DROP_FAILED, message)
       return
     }
@@ -566,18 +561,6 @@ export class OnDragDropItemCommand extends Command<
       return
     }
 
-    if (
-      WeatherRocks.includes(item) &&
-      (!pokemon.types.has(Synergy.ROCK) ||
-        pokemon.types.has(SynergyGivenByItem[item]))
-    ) {
-      if (item !== Item.BLACK_AUGURITE || pokemon.passive !== Passive.SCYTHER) {
-        // prevent adding weather rocks to non-rock pokemon, or to those with the synergy already
-        client.send(Transfer.DRAG_DROP_FAILED, message)
-        return
-      }
-    }
-
     if (!isBasicItem && pokemon.items.has(item)) {
       // prevent adding twitce the same completed item
       client.send(Transfer.DRAG_DROP_FAILED, message)
@@ -585,7 +568,7 @@ export class OnDragDropItemCommand extends Command<
     }
 
     if (item === Item.RARE_CANDY) {
-      const evolution = pokemon?.evolution
+      const evolution = pokemon.evolutionRule?.getEvolution(pokemon, player)
       if (
         !evolution ||
         evolution === Pkm.DEFAULT ||
@@ -632,6 +615,10 @@ export class OnDragDropItemCommand extends Command<
     } else {
       pokemon.items.add(item)
       removeInArray(player.items, item)
+    }
+
+    if (pokemon.items.has(Item.SHINY_CHARM)) {
+      pokemon.shiny = true
     }
 
     this.room.checkEvolutionsAfterItemAcquired(playerId, pokemon)
@@ -689,9 +676,13 @@ export class OnRefreshCommand extends Command<GameRoom, string> {
     const player = this.state.players.get(id)
     if (!player) return
     const rollCost = player.shopFreeRolls > 0 ? 0 : 1
-    if (player.money >= rollCost && player.alive) {
+    const rollCostType =
+      this.state.specialGameRule === SpecialGameRule.DESPERATE_MOVES
+        ? "life"
+        : "money"
+    if (player[rollCostType] >= rollCost && player.alive) {
       this.state.shop.assignShop(player, true, this.state)
-      player.money -= rollCost
+      player[rollCostType] -= rollCost
       player.rerollCount++
       if (player.shopFreeRolls > 0) player.shopFreeRolls--
     }
@@ -896,7 +887,7 @@ export class OnUpdatePhaseCommand extends Command<GameRoom> {
           case Effect.ANGER_POINT:
             player.titles.add(Title.CAMPER)
             break
-          case Effect.POWER_TRIP:
+          case Effect.MERCILESS:
             player.titles.add(Title.MYTH_TRAINER)
             break
           case Effect.CALM_MIND:
@@ -1262,58 +1253,90 @@ export class OnUpdatePhaseCommand extends Command<GameRoom> {
           }
         }
 
-        let eggChance = 0
-        let shinyChance = 0
         const hasBabyActive =
           player.effects.has(Effect.HATCHER) ||
           player.effects.has(Effect.BREEDER) ||
           player.effects.has(Effect.GOLDEN_EGGS)
         const hasLostLastBattle =
           player.history.at(-1)?.result === BattleResult.DEFEAT
+        const eggsOnBench = values(player.board).filter(
+          (p) => p.name === Pkm.EGG
+        )
+        const nbOfGoldenEggsOnBench = eggsOnBench.filter((p) => p.shiny).length
+        let nbEggsFound = 0
+        let goldenEggFound = false
 
         if (hasLostLastBattle && hasBabyActive) {
-          if (player.effects.has(Effect.HATCHER)) {
-            eggChance = player.eggChance
-            shinyChance = 0
-          }
-          if (player.effects.has(Effect.BREEDER)) {
-            eggChance = 1
-            shinyChance = 0
-          }
-          if (player.effects.has(Effect.GOLDEN_EGGS)) {
-            eggChance = 1
-            shinyChance = player.eggChance
+          const EGG_CHANCE = 0.1
+          const GOLDEN_EGG_CHANCE = 0.04
+          const playerEggChanceStacked = player.eggChance
+          const babies = values(player.board).filter(
+            (p) => !isOnBench(p) && p.types.has(Synergy.BABY)
+          )
+
+          for (const baby of babies) {
+            if (
+              player.effects.has(Effect.GOLDEN_EGGS) &&
+              nbOfGoldenEggsOnBench === 0 &&
+              chance(GOLDEN_EGG_CHANCE, baby)
+            ) {
+              nbEggsFound++
+              goldenEggFound = true
+            } else if (chance(EGG_CHANCE, baby)) {
+              nbEggsFound++
+            }
+            if (player.effects.has(Effect.GOLDEN_EGGS) && !goldenEggFound) {
+              player.eggChance += GOLDEN_EGG_CHANCE * (1 + baby.luck / 100)
+            } else if (
+              player.effects.has(Effect.HATCHER) &&
+              nbEggsFound === 0
+            ) {
+              player.eggChance += EGG_CHANCE * (1 + baby.luck / 100)
+            }
           }
 
-          player.eggChance = max(1)(player.eggChance + 0.25)
-        } else {
-          player.eggChance = 0
+          // Second chance with chance stacked after lose streaks
+          if (
+            nbEggsFound === 0 &&
+            (player.effects.has(Effect.BREEDER) ||
+              player.effects.has(Effect.GOLDEN_EGGS) ||
+              chance(playerEggChanceStacked))
+          ) {
+            nbEggsFound = 1 // baby >= 5 guarantees at least 1 egg after a defeat
+          }
+          if (
+            goldenEggFound === false &&
+            player.effects.has(Effect.GOLDEN_EGGS) &&
+            nbOfGoldenEggsOnBench === 0 &&
+            chance(playerEggChanceStacked)
+          ) {
+            goldenEggFound = true
+          }
+        } else if (!isPVE) {
+          player.eggChance = 0 // winning a PvP fight resets the stacked egg chance
         }
 
         if (
           this.state.specialGameRule === SpecialGameRule.OMELETTE_COOK &&
           [1, 2, 3].includes(this.state.stageLevel)
         ) {
-          eggChance = 1
+          nbEggsFound = 1
         }
 
-        const eggsOnBench = values(player.board).filter(
-          (p) => p.name === Pkm.EGG
-        )
-        const nbOfShinyEggs = eggsOnBench.filter((p) => p.shiny).length
-
-        if (chance(eggChance) && getFreeSpaceOnBench(player.board) > 0) {
-          const shiny = chance(shinyChance) && nbOfShinyEggs === 0
-          const egg = createRandomEgg(shiny, player)
+        for (let i = 0; i < nbEggsFound; i++) {
+          if (getFreeSpaceOnBench(player.board) === 0) continue
+          const isGoldenEgg =
+            goldenEggFound && i === 0 && nbOfGoldenEggsOnBench === 0
+          const egg = createRandomEgg(isGoldenEgg, player)
           const x = getFirstAvailablePositionInBench(player.board)
           egg.positionX = x !== undefined ? x : -1
           egg.positionY = 0
           player.board.set(egg.id, egg)
           if (
             player.effects.has(Effect.HATCHER) ||
-            (player.effects.has(Effect.GOLDEN_EGGS) && shiny)
+            (player.effects.has(Effect.GOLDEN_EGGS) && isGoldenEgg)
           ) {
-            player.eggChance = 0
+            player.eggChance = 0 // getting an egg resets the stacked egg chance
           }
         }
 
@@ -1420,7 +1443,7 @@ export class OnUpdatePhaseCommand extends Command<GameRoom> {
             pveStage,
             this.state.shinyEncounter
           )
-          const weather = getWeather(player.board, pveBoard)
+          const weather = getWeather(player, null, pveBoard)
           const simulation = new Simulation(
             nanoid(),
             this.room,
@@ -1440,7 +1463,7 @@ export class OnUpdatePhaseCommand extends Command<GameRoom> {
 
       matchups.forEach((matchup) => {
         const { bluePlayer, redPlayer } = matchup
-        const weather = getWeather(bluePlayer.board, redPlayer.board)
+        const weather = getWeather(bluePlayer, redPlayer, redPlayer.board)
         const simulationId = nanoid()
         const simulation = new Simulation(
           simulationId,

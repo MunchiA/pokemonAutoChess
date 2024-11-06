@@ -46,6 +46,7 @@ export enum Effect {
   PURSUIT = "PURSUIT",
   BRUTAL_SWING = "BRUTAL_SWING",
   POWER_TRIP = "POWER_TRIP",
+  MERCILESS = "MERCILESS",
   MEDITATE = "MEDITATE",
   FOCUS_ENERGY = "FOCUS_ENERGY",
   CALM_MIND = "CALM_MIND",
@@ -133,5 +134,19 @@ export enum Effect {
   HAIL = "HAIL",
   FLUID = "FLUID",
   SHAPELESS = "SHAPELESS",
-  ETHEREAL = "ETHEREAL"
+  ETHEREAL = "ETHEREAL",
+  ZEN_MODE = "ZEN_MODE",
+  LIGHTNING_STRIKE = "LIGHTNING_STRIKE"
 }
+
+export const BoardEffects = [
+  Effect.LIGHTNING_STRIKE,
+  Effect.GAS,
+  Effect.POISON_GAS,
+  Effect.STEALTH_ROCKS,
+  Effect.SPIKES,
+  Effect.STICKY_WEB,
+  Effect.HAIL
+] as const
+
+export type BoardEffect = (typeof BoardEffects)[number]

@@ -757,6 +757,10 @@ export default class GameRoom extends Room<GameState> {
               }
 
               const dbrecord = this.transformToSimplePlayer(player)
+              const synergiesMap = new Map<Synergy, number>()
+              player.synergies.forEach((v, k) => {
+                v > 0 && synergiesMap.set(k, v)
+              })
               DetailledStatistic.create({
                 time: Date.now(),
                 name: dbrecord.name,
@@ -765,7 +769,8 @@ export default class GameRoom extends Room<GameState> {
                 nbplayers: humans.length + bots.length,
                 avatar: dbrecord.avatar,
                 playerId: dbrecord.id,
-                elo: elo
+                elo: elo,
+                synergies: synergiesMap
               })
             }
 
@@ -918,9 +923,6 @@ export default class GameRoom extends Room<GameState> {
         )
         if (pokemonEvolved) {
           hasEvolved = true
-
-          // check item evolution rule after count evolution (example: Porygon-2)
-          this.checkEvolutionsAfterItemAcquired(playerId, pokemonEvolved)
         }
       }
     })
@@ -942,10 +944,6 @@ export default class GameRoom extends Room<GameState> {
         player,
         this.state.stageLevel
       )
-      if (pokemonEvolved) {
-        // check additional item evolution rules. Not used yet in the game but we never know
-        this.checkEvolutionsAfterItemAcquired(playerId, pokemonEvolved)
-      }
     }
   }
 
