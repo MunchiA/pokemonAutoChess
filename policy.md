@@ -2,7 +2,7 @@
 
 Tu privacidad es importante para nosotros. Es política de Keldaan respetar tu privacidad y cumplir con cualquier ley y regulación aplicable con respecto a la información personal que podamos recopilar sobre ti, incluidos nuestros sitios web, https://pokemon.amunchi.net/, y otros sitios que poseemos y operamos.
 
-Esta política es efectiva a partir del 5 de octubre de 2021 y fue actualizada por última vez el 5 de octubre de 2021.
+Esta política es efectiva a partir del 5 de octubre de 2021 y fue actualizada por última vez el 11 de noviembre de 2024.
 
 # ¿Cómo solicitar la eliminación de tus datos?
 
