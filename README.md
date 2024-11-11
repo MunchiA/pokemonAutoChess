@@ -141,7 +141,7 @@ You might want to have full access rights on your local version. To do so, you c
 
 ## How to deploy your own Pokemon Auto Chess
 
-See this [README](https://github.com/keldaanCommunity/pokemonAutoChess/blob/master/deployment/README.md)
+See this [README](https://github.com/MunchiA/pokemonAutoChess/blob/master/deployment/README.md)
 
 ## Internationalisation
 

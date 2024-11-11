@@ -3,7 +3,7 @@ import React from "react"
 export default function GithubButton() {
   return (
     <a
-      href="https://github.com/keldaanCommunity/pokemonAutoChess"
+      href="https://github.com/MunchiA/pokemonAutoChess"
       target="_blank"
       rel="noopener noreferrer"
     >
