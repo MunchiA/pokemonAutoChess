@@ -8,13 +8,13 @@
     "node": ">=20.16.0",
     "npm": ">=10.8.1"
   },
-  "homepage": "https://github.com/keldaanCommunity/pokemonAutoChess#readme",
+  "homepage": "https://github.com/MunchiA/pokemonAutoChess#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/keldaanCommunity/pokemonAutoChess.git"
+    "url": "git+https://github.com/MunchiA/pokemonAutoChess.git"
   },
   "bugs": {
-    "url": "https://github.com/keldaanCommunity/pokemonAutoChess/issues"
+    "url": "https://github.com/MunchiA/pokemonAutoChess/issues"
   },
   "author": "keldaan-ag",
   "contributors": [
@@ -40,7 +40,10 @@
     "assetpack": "cd edit/assetpack && npm run assetpack",
     "precompute": "cd gen && ts-node precompute-all.ts",
     "colyseus-post-deploy": "npx colyseus-post-deploy",
-    "deploy-live": "pm2 deploy production update"
+    "deploy-live": "pm2 deploy production update",
+    "stop": "sudo systemctl stop pokemon-server.service",
+    "restart": "sudo systemctl stop pokemon-server.service && sudo systemctl start pokemon-server.service",
+    "service": "sudo systemctl start pokemon-server.service"
   },
   "dependencies": {
     "@colyseus/command": "^0.3.1",
