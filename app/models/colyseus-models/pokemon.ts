@@ -56,7 +56,7 @@ import {
 import { Synergy, SynergyEffects } from "../../types/enum/Synergy"
 import { Weather } from "../../types/enum/Weather"
 import { removeInArray, sum } from "../../utils/array"
-import { getFirstAvailablePositionInBench } from "../../utils/board"
+import { getFirstAvailablePositionInBench, isOnBench } from "../../utils/board"
 import { distanceC, distanceE } from "../../utils/distance"
 import { chance, pickRandomIn } from "../../utils/random"
 import { values } from "../../utils/schemas"
@@ -4903,6 +4903,20 @@ export class Zapdos extends Pokemon {
   attackSprite = AttackSprite.ELECTRIC_RANGE
 }
 
+export class GalarianZapdos extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.FIGHTING, Synergy.FLYING])
+  rarity = Rarity.LEGENDARY
+  stars = 3
+  hp = 300
+  atk = 30
+  def = 5
+  speDef = 5
+  maxPP = 100
+  range = 1
+  skill = Ability.THUNDEROUS_KICK
+  attackSprite = AttackSprite.FLYING_MELEE
+}
+
 export class Zeraora extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.WILD, Synergy.ELECTRIC])
   rarity = Rarity.UNIQUE
@@ -4973,6 +4987,20 @@ export class Moltres extends Pokemon {
   attackSprite = AttackSprite.FIRE_RANGE
 }
 
+export class GalarianMoltres extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.DARK, Synergy.FLYING])
+  rarity = Rarity.LEGENDARY
+  stars = 3
+  hp = 300
+  atk = 30
+  def = 3
+  speDef = 3
+  maxPP = 100
+  range = 3
+  skill = Ability.FIERY_WRATH
+  attackSprite = AttackSprite.FIRE_RANGE
+}
+
 export class Pinsir extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.WILD, Synergy.BUG])
   rarity = Rarity.UNIQUE
@@ -4999,6 +5027,20 @@ export class Articuno extends Pokemon {
   range = 2
   skill = Ability.BLIZZARD
   passive = Passive.SNOW
+  attackSprite = AttackSprite.FLYING_RANGE
+}
+
+export class GalarianArticuno extends Pokemon {
+  types = new SetSchema<Synergy>([Synergy.PSYCHIC, Synergy.FLYING])
+  rarity = Rarity.LEGENDARY
+  stars = 3
+  hp = 300
+  atk = 30
+  def = 3
+  speDef = 3
+  maxPP = 80
+  range = 2
+  skill = Ability.FREEZING_GLARE
   attackSprite = AttackSprite.FLYING_RANGE
 }
 
@@ -6646,9 +6688,7 @@ export class Primeape extends Pokemon {
   rarity = Rarity.EPIC
   stars = 2
   evolution = Pkm.ANNIHILAPE
-  evolutionRule = new ConditionBasedEvolutionRule(
-    (pokemon) => pokemon.atk > 30
-  )
+  evolutionRule = new ConditionBasedEvolutionRule((pokemon) => pokemon.atk > 30)
   hp = 240
   atk = 21
   def = 6
@@ -14468,7 +14508,7 @@ export class Petilil extends Pokemon {
   additional = true
 }
 
-export class Liligant extends Pokemon {
+export class Lilligant extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.GRASS, Synergy.FLORA, Synergy.HUMAN])
   rarity = Rarity.UNCOMMON
   stars = 2
@@ -14487,7 +14527,26 @@ export class Mantyke extends Pokemon {
   types = new SetSchema<Synergy>([Synergy.BABY, Synergy.WATER, Synergy.FLYING])
   rarity = Rarity.UNIQUE
   evolution = Pkm.MANTINE
-  evolutionRule = new ConditionBasedEvolutionRule(() => false)
+  evolutionRule = new ConditionBasedEvolutionRule(
+    (pokemon: Pokemon, player: Player) => {
+      for (const p of player.board.values()) {
+        if (
+          p.name === Pkm.REMORAID &&
+          !isOnBench(p) &&
+          !isOnBench(this) &&
+          distanceC(
+            this.positionX,
+            this.positionY,
+            p.positionX,
+            p.positionY
+          ) === 1
+        ) {
+          return true
+        }
+      }
+      return false
+    }
+  )
   stars = 2
   hp = 160
   atk = 6
@@ -14500,14 +14559,7 @@ export class Mantyke extends Pokemon {
   passive = Passive.MANTYKE
 
   onChangePosition(x: number, y: number, player: Player) {
-    for (const pokemon of player.board.values()) {
-      if (
-        pokemon.name === Pkm.REMORAID &&
-        distanceC(x, y, pokemon.positionX, pokemon.positionY) === 1
-      ) {
-        player.transformPokemon(this, Pkm.MANTINE)
-      }
-    }
+    this.evolutionRule.tryEvolve(this, player, 0)
   }
 }
 
@@ -15301,6 +15353,9 @@ export const PokemonClasses: Record<
   [Pkm.ZAPDOS]: Zapdos,
   [Pkm.MOLTRES]: Moltres,
   [Pkm.ARTICUNO]: Articuno,
+  [Pkm.GALARIAN_ARTICUNO]: GalarianArticuno,
+  [Pkm.GALARIAN_ZAPDOS]: GalarianZapdos,
+  [Pkm.GALARIAN_MOLTRES]: GalarianMoltres,
   [Pkm.DIALGA]: Dialga,
   [Pkm.PALKIA]: Palkia,
   [Pkm.SUICUNE]: Suicune,
@@ -15936,7 +15991,7 @@ export const PokemonClasses: Record<
   [Pkm.LUVDISC]: Luvdisc,
   [Pkm.AUDINO]: Audino,
   [Pkm.PETILIL]: Petilil,
-  [Pkm.LILIGANT]: Liligant,
+  [Pkm.LILIGANT]: Lilligant,
   [Pkm.MANTYKE]: Mantyke,
   [Pkm.MANTINE]: Mantine,
   [Pkm.REMORAID]: Remoraid,
