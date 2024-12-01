@@ -90,7 +90,7 @@ export function MainSidebar(props: MainSidebarProps) {
           svg="meta"
           onClick={() =>
             window.open(
-              "https://github.com/keldaanCommunity/pokemonAutoChess/blob/master/policy.md",
+              "https://github.com/MunchiA/pokemonAutoChess/blob/master/policy.md",
               "_blank"
             )
           }
