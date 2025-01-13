@@ -19,12 +19,10 @@ export class IdleState extends PokemonState {
     super.update(pokemon, dt, board, weather, player)
 
     if (pokemon.status.tree) {
-      if (pokemon.pp >= pokemon.maxPP && pokemon.canMove) {
+      if (pokemon.maxPP > 0 && pokemon.pp >= pokemon.maxPP && pokemon.canMove) {
         pokemon.status.tree = false
         pokemon.toMovingState()
       }
-    } else if (pokemon.status.bideCooldown > 0) {
-      pokemon.status.bideCooldown -= dt
     } else if (pokemon.canMove) {
       pokemon.toMovingState()
     }
@@ -45,7 +43,10 @@ export class IdleState extends PokemonState {
       pokemon.action = PokemonActionState.IDLE
     } else if (pokemon.status.resurecting) {
       pokemon.action = PokemonActionState.HURT
-    } else if (pokemon.status.sleep || pokemon.status.freeze) {
+    } else if (
+      (pokemon.status.sleep || pokemon.status.freeze) &&
+      pokemon.passive !== Passive.INANIMATE
+    ) {
       pokemon.action = PokemonActionState.SLEEP
     } else {
       pokemon.action = PokemonActionState.IDLE

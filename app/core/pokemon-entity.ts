@@ -3,7 +3,7 @@ import { logger } from "../utils/logger"
 import { nanoid } from "nanoid"
 import Count from "../models/colyseus-models/count"
 import Player from "../models/colyseus-models/player"
-import { Pokemon } from "../models/colyseus-models/pokemon"
+import { Pokemon, PokemonClasses } from "../models/colyseus-models/pokemon"
 import Status from "../models/colyseus-models/status"
 import PokemonFactory from "../models/pokemon-factory"
 import { getSellPrice } from "../models/shop"
@@ -21,6 +21,7 @@ import {
   BOARD_WIDTH,
   DEFAULT_CRIT_CHANCE,
   DEFAULT_CRIT_POWER,
+  ItemStats,
   MANA_SCARF_MANA,
   ON_ATTACK_MANA,
   SCOPE_LENS_MANA
@@ -35,7 +36,7 @@ import {
   Stat,
   Team
 } from "../types/enum/Game"
-import { Berries, Item } from "../types/enum/Item"
+import { Berries, Item, SynergyGivenByItem } from "../types/enum/Item"
 import { Passive } from "../types/enum/Passive"
 import { Pkm, PkmIndex } from "../types/enum/Pokemon"
 import { SpecialGameRule } from "../types/enum/SpecialGameRule"
@@ -44,7 +45,7 @@ import { Weather } from "../types/enum/Weather"
 import { count } from "../utils/array"
 import { isOnBench } from "../utils/board"
 import { distanceC, distanceM } from "../utils/distance"
-import { clamp, max, min, roundToNDigits } from "../utils/number"
+import { clamp, min, roundToNDigits } from "../utils/number"
 import { chance, pickNRandomIn, pickRandomIn } from "../utils/random"
 import { values } from "../utils/schemas"
 import AttackingState from "./attacking-state"
@@ -54,6 +55,9 @@ import MovingState from "./moving-state"
 import PokemonState from "./pokemon-state"
 import Simulation from "./simulation"
 import { DelayedCommand, SimulationCommand } from "./simulation-command"
+import { ItemEffects } from "./items"
+import { OnItemRemovedEffect, OnKillEffect, Effect as EffectClass } from "./effect"
+import { getPokemonData } from "../models/precomputed/precomputed-pokemon-data"
 
 export class PokemonEntity extends Schema implements IPokemonEntity {
   @type("boolean") shiny: boolean
@@ -102,6 +106,7 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
   baseDef: number
   baseSpeDef: number
   baseRange: number
+  baseHP: number
   dodge: number
   physicalDamage: number
   specialDamage: number
@@ -111,14 +116,13 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
   shieldDamageTaken: number
   shieldDone: number
   flyingProtection = 0
-  growGroundTimer = 3000
   grassHealCooldown = 2000
   sandstormDamageTimer = 0
   fairySplashCooldown = 0
-  echo = 0
   isClone = false
   refToBoardPokemon: IPokemon
   commands = new Array<SimulationCommand>()
+  effectsSet = new Set<EffectClass>()
 
   constructor(
     pokemon: IPokemon,
@@ -135,7 +139,7 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     pokemon.items.forEach((it) => {
       this.items.add(it)
     })
-    this.status = new Status()
+    this.status = new Status(simulation)
     this.count = new Count()
     this.simulation = simulation
 
@@ -151,6 +155,7 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     this.baseDef = pokemon.def
     this.baseSpeDef = pokemon.speDef
     this.baseRange = pokemon.range
+    this.baseHP = pokemon.hp
     this.atk = pokemon.atk
     this.def = pokemon.def
     this.speDef = pokemon.speDef
@@ -206,6 +211,10 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     )
   }
 
+  get canBeCopied(): boolean {
+    return this.passive !== Passive.INANIMATE
+  }
+
   get isGhostOpponent(): boolean {
     return this.simulation.isGhostBattle && this.player?.team === Team.RED_TEAM
   }
@@ -240,11 +249,8 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
   get inLightCell(): boolean {
     if (!this.player) return false
     const { lightX, lightY } = this.player
-    if (this.team === Team.BLUE_TEAM) {
-      return this.positionX === lightX && this.positionY === lightY - 1
-    } else {
-      return this.positionX === lightX && this.positionY === 5 - (lightY - 1)
-    }
+    const { positionX, positionY } = this.refToBoardPokemon
+    return positionX === lightX && positionY === lightY
   }
 
   hasSynergyEffect(synergy: Synergy): boolean {
@@ -371,10 +377,12 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
   }
 
   toMovingState() {
+    if (this.passive === Passive.INANIMATE) return
     this.changeState(new MovingState())
   }
 
   toAttackingState() {
+    if (this.passive === Passive.INANIMATE) return
     this.changeState(new AttackingState())
   }
 
@@ -409,12 +417,12 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     value =
       value * (1 + (apBoost * caster.ap) / 100) * (crit ? caster.critPower : 1)
 
-    // for every 5% crit chance > 100, +0.1 crit power
+    // for every 5% crit chance > 100, +10 crit power
     this.critChance += value
 
     if (this.critChance > 100) {
       const overCritChance = Math.round(this.critChance - 100)
-      this.addCritPower(overCritChance / 50, this, 0, false)
+      this.addCritPower(overCritChance * 2, this, 0, false)
       this.critChance = 100
     }
   }
@@ -426,7 +434,9 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     crit: boolean
   ) {
     value =
-      value * (1 + (apBoost * caster.ap) / 100) * (crit ? caster.critPower : 1)
+      (value / 100) *
+      (1 + (apBoost * caster.ap) / 100) *
+      (crit ? caster.critPower : 1)
 
     this.critPower = min(0)(roundToNDigits(this.critPower + value, 2))
   }
@@ -435,12 +445,19 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent = false
   ) {
     value =
       value * (1 + (apBoost * caster.ap) / 100) * (crit ? caster.critPower : 1)
-    this.hp = min(1)(this.hp + value)
-    this.life = max(this.hp)(this.life + value)
+    const update = (target: { hp: number }) => {
+      target.hp = min(1)(target.hp + value)
+    }
+    update(this)
+    this.life = clamp(this.life + value, 1, this.hp)
+    if (permanent && !this.isGhostOpponent) {
+      update(this.refToBoardPokemon)
+    }
   }
 
   addDodgeChance(
@@ -451,89 +468,180 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
   ) {
     value =
       value * (1 + (apBoost * caster.ap) / 100) * (crit ? caster.critPower : 1)
-    this.dodge = max(0.9)(this.dodge + value)
+    this.dodge = clamp(this.dodge + value, 0, 0.9)
   }
 
   addAbilityPower(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent = false
   ) {
     value = Math.round(
       value * (1 + (apBoost * caster.ap) / 100) * (crit ? caster.critPower : 1)
     )
-    this.ap = min(-100)(this.ap + value)
+    const update = (target: { ap: number }) => {
+      target.ap = min(-100)(target.ap + value)
+    }
+    update(this)
+    if (permanent && !this.isGhostOpponent) {
+      update(this.refToBoardPokemon)
+    }
   }
 
   addLuck(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent = false
   ) {
     value =
       value * (1 + (apBoost * caster.ap) / 100) * (crit ? caster.critPower : 1)
-    this.luck = min(-100)(this.luck + value)
+    const update = (target: { luck: number }) => {
+      target.luck = min(-100)(target.luck + value)
+    }
+    update(this)
+    if (permanent && !this.isGhostOpponent) {
+      update(this.refToBoardPokemon)
+    }
   }
 
   addDefense(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent = false
   ) {
     value = Math.round(
       value * (1 + (apBoost * caster.ap) / 100) * (crit ? caster.critPower : 1)
     )
-    this.def = min(0)(this.def + value)
+    const update = (target: { def: number }) => {
+      target.def = min(0)(target.def + value)
+    }
+    update(this)
+    if (permanent && !this.isGhostOpponent) {
+      update(this.refToBoardPokemon)
+    }
   }
 
   addSpecialDefense(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent = false
   ) {
     value = Math.round(
       value * (1 + (apBoost * caster.ap) / 100) * (crit ? caster.critPower : 1)
     )
-    this.speDef = min(0)(this.speDef + value)
+    const update = (target: { speDef: number }) => {
+      target.speDef = min(0)(target.speDef + value)
+    }
+    update(this)
+    if (permanent && !this.isGhostOpponent) {
+      update(this.refToBoardPokemon)
+    }
   }
 
   addAttack(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent = false
   ) {
     value = Math.round(
       value * (1 + (apBoost * caster.ap) / 100) * (crit ? caster.critPower : 1)
     )
-    this.atk = min(1)(this.atk + value)
+    const update = (target: { atk: number }) => {
+      target.atk = min(1)(target.atk + value)
+    }
+    update(this)
+    if (permanent && !this.isGhostOpponent) {
+      update(this.refToBoardPokemon)
+    }
   }
 
   addAttackSpeed(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent = false
   ) {
     if (this.passive === Passive.MELMETAL) {
-      this.addAttack(value * 0.3, caster, apBoost, crit)
+      this.addAttack(value * 0.3, caster, apBoost, crit, permanent)
     } else {
       value =
         value *
         (1 + (apBoost * caster.ap) / 100) *
         (crit ? caster.critPower : 1)
-      const currentAtkSpeedBonus = 100 * (this.atkSpeed / 0.75 - 1)
-      const atkSpeedBonus = currentAtkSpeedBonus + value
-      this.atkSpeed = clamp(
-        roundToNDigits(0.75 * (1 + atkSpeedBonus / 100), 2),
-        0.4,
-        2.5
+      const update = (target: { atkSpeed: number }) => {
+        const currentAtkSpeedBonus = 100 * (target.atkSpeed / 0.75 - 1)
+        const atkSpeedBonus = currentAtkSpeedBonus + value
+        target.atkSpeed = clamp(
+          roundToNDigits(0.75 * (1 + atkSpeedBonus / 100), 2),
+          0.4,
+          2.5
+        )
+      }
+      update(this)
+      if (permanent && !this.isGhostOpponent) {
+        update(this.refToBoardPokemon)
+      }
+    }
+  }
+
+  addItem(item: Item, permanent = false) {
+    if (this.items.size >= 3) {
+      return
+    }
+    this.items.add(item)
+    this.simulation.applyItemEffect(this, item)
+    if (permanent && !this.isGhostOpponent) {
+      this.refToBoardPokemon.items.add(item)
+    }
+
+    const type = SynergyGivenByItem[item]
+    if (type && !this.types.has(type)) {
+      this.types.add(type)
+      this.simulation.applySynergyEffects(this, type)
+    }
+  }
+
+  removeItem(item: Item, permanent = false) {
+    this.items.delete(item)
+    this.removeItemEffect(item)
+    if (permanent && !this.isGhostOpponent) {
+      this.refToBoardPokemon.items.delete(item)
+    }
+  }
+
+  removeItemEffect(item: Item) {
+    if (ItemStats[item]) {
+      Object.entries(ItemStats[item]).forEach(([stat, value]) =>
+        this.applyStat(stat as Stat, -value)
       )
     }
+
+    const type = SynergyGivenByItem[item]
+    const default_types = getPokemonData(this.name).types
+    if (type && !default_types.includes(type)) {
+      this.types.delete(type)
+      SynergyEffects[type].forEach((effectName) => {
+        this.effects.delete(effectName)
+        this.effectsSet.forEach((effect) => {
+          if (effect.origin === effectName) this.effectsSet.delete(effect)
+        })
+      })
+    }
+
+    ItemEffects[item]
+      ?.filter((effect) => effect instanceof OnItemRemovedEffect)
+      ?.forEach((effect) => effect.apply(this))
   }
 
   addPsychicField() {
@@ -839,14 +947,6 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
       this.addAttackSpeed(5, this, 1, false)
     }
 
-    if (this.name === Pkm.MORPEKO) {
-      target.status.triggerParalysis(2000, target, this)
-    }
-
-    if (this.name === Pkm.MORPEKO_HANGRY) {
-      target.status.triggerWound(4000, target, this)
-    }
-
     if (this.passive === Passive.DREAM_CATCHER && target.status.sleep) {
       const allies = board.cells.filter(
         (p) => p && p.team === this.team && p.id !== this.id
@@ -932,8 +1032,8 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     }
 
     if (this.hasSynergyEffect(Synergy.GHOST)) {
-      const dodgeChance = 0.25
-      if (chance(dodgeChance, this)) {
+      const silenceChance = 0.2
+      if (chance(silenceChance, this)) {
         target.status.triggerSilence(2000, target, this)
       }
     }
@@ -1020,9 +1120,9 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     if (this.hasSynergyEffect(Synergy.HUMAN)) {
       let lifesteal = 0
       if (this.effects.has(Effect.MEDITATE)) {
-        lifesteal = 0.15
+        lifesteal = 0.25
       } else if (this.effects.has(Effect.FOCUS_ENERGY)) {
-        lifesteal = 0.3
+        lifesteal = 0.4
       } else if (this.effects.has(Effect.CALM_MIND)) {
         lifesteal = 0.6
       }
@@ -1076,12 +1176,12 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     ) {
       const cells = board.getAdjacentCells(this.positionX, this.positionY)
       cells.forEach((cell) => {
-        board.addBoardEffect(cell.x, cell.y, Effect.GAS, this.simulation)
+        board.addBoardEffect(cell.x, cell.y, Effect.SMOKE, this.simulation)
         if (cell.value && cell.value.team !== this.team) {
           cell.value.status.triggerParalysis(3000, cell.value, this)
         }
       })
-      this.items.delete(Item.SMOKE_BALL)
+      this.removeItem(Item.SMOKE_BALL)
       this.flyAway(board)
     }
 
@@ -1105,7 +1205,7 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
           )
         }
       })
-      this.items.delete(Item.ABSORB_BULB)
+      this.removeItem(Item.ABSORB_BULB)
     }
 
     // Flying protection
@@ -1401,35 +1501,22 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     }
 
     if (target.items.has(Item.BABIRI_BERRY)) {
-      target.status.triggerProtect(2000)
-      target.handleHeal(20, target, 0, false)
-      target.items.delete(Item.BABIRI_BERRY)
-      target.refToBoardPokemon.items.delete(Item.BABIRI_BERRY)
+      target.eatBerry(Item.BABIRI_BERRY)
     }
   }
 
   // called after killing an opponent (does not proc if resurection)
   onKill({ target, board }: { target: PokemonEntity; board: Board }) {
+    const itemEffects: OnKillEffect[] = values(this.items)
+      .flatMap((item) => ItemEffects[item] ?? [])
+      .filter((effect) => effect instanceof OnKillEffect)
+    itemEffects.forEach((effect) => {
+      effect.apply(this, target, board)
+    })
+
     if (this.passive === Passive.SOUL_HEART) {
       this.addPP(10, this, 0, false)
       this.addAbilityPower(10, this, 0, false)
-    }
-
-    if (this.items.has(Item.AMULET_COIN) && this.player) {
-      this.player.addMoney(1, true, this)
-      this.count.moneyCount += 1
-      this.count.amuletCoinCount += 1
-    }
-
-    if (this.items.has(Item.GOLD_BOTTLE_CAP) && this.player) {
-      const isLastEnemy =
-        board.cells.some(
-          (p) =>
-            p && p.team !== this.team && (p.life > 0 || p.status.resurecting)
-        ) === false
-      const moneyGained = isLastEnemy ? 5 : 1
-      this.player.addMoney(moneyGained, true, this)
-      this.count.moneyCount += moneyGained
     }
 
     if (this.hasSynergyEffect(Synergy.MONSTER)) {
@@ -1521,9 +1608,8 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
         values(target.items).filter((item) => item !== Item.COMFEY)
       )
       if (floraSpawn && randomItem && floraSpawn.items.size < 3) {
-        floraSpawn.items.add(randomItem)
-        floraSpawn.simulation.applyItemEffect(floraSpawn, randomItem)
-        target.items.delete(randomItem)
+        floraSpawn.addItem(randomItem)
+        target.removeItem(randomItem)
       }
     }
 
@@ -1543,11 +1629,21 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     if (this.passive === Passive.GRIM_NEIGH) {
       this.addAbilityPower(30, this, 0, false)
     }
+
+    if (
+      this.player &&
+      this.simulation.room.state.specialGameRule === SpecialGameRule.BLOOD_MONEY
+    ) {
+      this.player.addMoney(1, true, this)
+      this.count.moneyCount += 1
+    }
   }
 
   // called after death (does not proc if resurection)
   onDeath({ board }: { board: Board }) {
-    this.refToBoardPokemon.deathCount++
+    if (!this.isGhostOpponent) {
+      this.refToBoardPokemon.deathCount++
+    }
     const isWorkUp = this.effects.has(Effect.BULK_UP)
     const isRage = this.effects.has(Effect.RAGE)
     const isAngerPoint = this.effects.has(Effect.ANGER_POINT)
@@ -1623,25 +1719,25 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     }
   }
 
-  applyStat(stat: Stat, value: number) {
+  applyStat(stat: Stat, value: number, permanent = false) {
     switch (stat) {
       case Stat.ATK:
-        this.addAttack(value, this, 0, false)
+        this.addAttack(value, this, 0, false, permanent)
         break
       case Stat.DEF:
-        this.addDefense(value, this, 0, false)
+        this.addDefense(value, this, 0, false, permanent)
         break
       case Stat.SPE_DEF:
-        this.addSpecialDefense(value, this, 0, false)
+        this.addSpecialDefense(value, this, 0, false, permanent)
         break
       case Stat.AP:
-        this.addAbilityPower(value, this, 0, false)
+        this.addAbilityPower(value, this, 0, false, permanent)
         break
       case Stat.PP:
         this.addPP(value, this, 0, false)
         break
       case Stat.ATK_SPEED:
-        this.addAttackSpeed(value, this, 0, false)
+        this.addAttackSpeed(value, this, 0, false, permanent)
         break
       case Stat.CRIT_CHANCE:
         this.addCritChance(value, this, 0, false)
@@ -1653,10 +1749,11 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
         this.addShield(value, this, 0, false)
         break
       case Stat.HP:
-        this.addMaxHP(value, this, 0, false)
+        this.addMaxHP(value, this, 0, false, permanent)
         break
       case Stat.LUCK:
-        this.addLuck(value, this, 0, false)
+        this.addLuck(value, this, 0, false, permanent)
+        break
     }
   }
 
@@ -1706,6 +1803,7 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
 
     this.items.delete(Item.DYNAMAX_BAND)
     this.items.delete(Item.SACRED_ASH)
+    this.items.delete(Item.MAX_REVIVE)
 
     this.simulation.applySynergyEffects(this)
     this.simulation.applyItemsEffects(this)
@@ -1817,18 +1915,20 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
       case Item.BERRY_JUICE:
         this.handleHeal(this.hp - this.life, this, 0, false)
         break
+      case Item.BABIRI_BERRY:
+        this.status.triggerProtect(2000)
+        this.handleHeal(20, this, 0, false)
+        break
     }
 
     if (stealedFrom) {
-      stealedFrom.items.delete(berry)
-      stealedFrom.refToBoardPokemon.items.delete(berry)
+      stealedFrom.removeItem(berry, true)
     } else {
-      this.items.delete(berry)
-      this.refToBoardPokemon.items.delete(berry)
+      this.removeItem(berry, true)
     }
 
     if (this.passive === Passive.GLUTTON) {
-      this.refToBoardPokemon.hp += 20
+      this.applyStat(Stat.HP, 20, true)
       if (this.refToBoardPokemon.hp > 750) {
         this.player?.titles.add(Title.GLUTTON)
       }
@@ -1841,6 +1941,18 @@ export class PokemonEntity extends Schema implements IPokemonEntity {
     ) {
       this.player.items.push(Item.BERRY_JUICE)
     }
+  }
+
+  transferAbility(name: Ability | string) {
+    this.simulation.room.broadcast(Transfer.ABILITY, {
+      id: this.simulation.id,
+      skill: name,
+      positionX: this.positionX,
+      positionY: this.positionY,
+      targetX: this.targetX,
+      targetY: this.targetY,
+      orientation: this.orientation
+    })
   }
 }
 
@@ -1881,7 +1993,7 @@ export function canSell(
     return false
   }
 
-  return true
+  return new PokemonClasses[pkm]().canBeSold
 }
 
 export function getMoveSpeed(

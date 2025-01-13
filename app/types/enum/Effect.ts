@@ -107,8 +107,8 @@ export enum Effect {
   NIGHT = "NIGHT",
   WINDY = "WINDY",
   BLOODMOON = "BLOODMOON",
-  HYDRATATION = "HYDRATATION",
-  GAS = "GAS",
+  SMOG = "SMOG",
+  SMOKE = "SMOKE",
   POISON_GAS = "POISON_GAS",
   SHINING_RAY = "SHINING_RAY",
   LIGHT_PULSE = "LIGHT_PULSE",
@@ -132,24 +132,28 @@ export enum Effect {
   BERSERK = "BERSERK",
   STICKY_WEB = "STICKY_WEB",
   HAIL = "HAIL",
-  LAVA = "LAVA",
+  EMBER = "EMBER",
   FLUID = "FLUID",
   SHAPELESS = "SHAPELESS",
   ETHEREAL = "ETHEREAL",
   ZEN_MODE = "ZEN_MODE",
-  LIGHTNING_STRIKE = "LIGHTNING_STRIKE"
+  LIGHTNING_STRIKE = "LIGHTNING_STRIKE",
+  VICTINI_PASSIVE = "VICTINI_PASSIVE",
+  GOOD_LUCK = "GOOD_LUCK",
+  BAD_LUCK = "BAD_LUCK",
+  WONDER_ROOM = "WONDER_ROOM"
 }
 
 export const BoardEffects = [
   Effect.LIGHTNING_STRIKE,
-  Effect.GAS,
+  Effect.SMOKE,
   Effect.POISON_GAS,
   Effect.STEALTH_ROCKS,
   Effect.SPIKES,
   Effect.TOXIC_SPIKES,
   Effect.STICKY_WEB,
   Effect.HAIL,
-  Effect.LAVA
+  Effect.EMBER
 ] as const
 
 export type BoardEffect = (typeof BoardEffects)[number]

@@ -26,6 +26,7 @@ import GameScene from "../scenes/game-scene"
 import PokemonSprite from "./pokemon"
 import PokemonAvatar from "./pokemon-avatar"
 import PokemonSpecial from "./pokemon-special"
+import { displayBoost } from "./boosts-animations"
 
 export enum BoardMode {
   PICK = "pick",
@@ -625,12 +626,14 @@ export default class BoardManager {
 
         case "atk":
           pokemonUI.atk = value as IPokemon["atk"]
-          if (value > previousValue) this.displayBoost(Stat.ATK, pokemonUI)
+          if ((value as IPokemon["atk"]) > (previousValue as IPokemon["atk"]))
+            this.displayBoost(Stat.ATK, pokemonUI)
           break
 
         case "ap":
           pokemonUI.ap = value as IPokemon["ap"]
-          if (value > previousValue) this.displayBoost(Stat.AP, pokemonUI)
+          if ((value as IPokemon["ap"]) > (previousValue as IPokemon["atk"]))
+            this.displayBoost(Stat.AP, pokemonUI)
           break
 
         case "shiny":
@@ -640,6 +643,13 @@ export default class BoardManager {
             pokemonUI.action,
             false
           )
+          break
+
+        case "skill":
+          if (pokemonUI.skill !== value) {
+            pokemonUI.skill = value as IPokemon["skill"]
+            pokemonUI.evolutionAnimation()
+          }
           break
       }
     }
@@ -698,22 +708,7 @@ export default class BoardManager {
 
   displayBoost(stat: Stat, pokemon: PokemonSprite) {
     pokemon.emoteAnimation()
-    const coordinates = transformCoordinate(
-      pokemon.positionX,
-      pokemon.positionY
-    )
-    const boost = this.scene.add
-      .sprite(
-        coordinates[0],
-        coordinates[1] - 10,
-        "boosts",
-        `BOOST_${stat}/000.png`
-      )
-      .setDepth(7)
-      .setScale(2, 2)
-    boost.anims.play(`BOOST_${stat}`)
-    boost.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-      boost.destroy()
-    })
+    const coords = transformCoordinate(pokemon.positionX, pokemon.positionY)
+    displayBoost(this.scene, coords[0], coords[1], stat)
   }
 }

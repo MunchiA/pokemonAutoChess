@@ -153,14 +153,14 @@ export default class LoadingManager {
         frameWidth: 64,
         frameHeight: 64,
         startFrame: 0,
-        endFrame: 17
+        endFrame: 23
       }
     })
 
     for (const pack in atlas.packs) {
       scene.load.multiatlas(
         atlas.packs[pack].name,
-        `/assets/${pack}/${atlas.packs[pack].name}.json?v=${pkg.version}`,
+        `/assets/${pack}/${atlas.packs[pack].name}-${pkg.version}.json`,
         `/assets/${pack}/`
       )
     }

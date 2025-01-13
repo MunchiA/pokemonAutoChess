@@ -1,6 +1,7 @@
 import { ISimulationCommand, Transfer } from "../types"
 import { Effect } from "../types/enum/Effect"
 import { AttackType } from "../types/enum/Game"
+import { Pkm } from "../types/enum/Pokemon"
 import Board from "./board"
 import { PokemonEntity } from "./pokemon-entity"
 
@@ -79,7 +80,7 @@ export class AttackCommand extends SimulationCommand {
                 const enemy = this.board.getValue(cell.x, cell.y)
                 if (enemy && this.pokemon.team !== enemy.team) {
                   enemy.handleSpecialDamage(
-                    10,
+                    20,
                     this.board,
                     AttackType.SPECIAL,
                     this.pokemon,
@@ -97,6 +98,14 @@ export class AttackCommand extends SimulationCommand {
                 }
               }
             })
+        }
+
+        if (this.pokemon.name === Pkm.MORPEKO) {
+          this.target.status.triggerParalysis(2000, this.target, this.pokemon)
+        }
+        
+        if (this.pokemon.name === Pkm.MORPEKO_HANGRY) {
+          this.target.status.triggerWound(4000, this.target, this.pokemon)
         }
       }
     }

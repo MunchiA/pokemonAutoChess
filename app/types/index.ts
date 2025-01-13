@@ -73,7 +73,7 @@ export enum Transfer {
   ADD_BOT = "ADD_BOT",
   REMOVE_BOT = "REMOVE_BOT",
   TOGGLE_READY = "TOGGLE_READY",
-  TOGGLE_NO_ELO = "TOGGLE_NO_ELO",
+  CHANGE_NO_ELO = "CHANGE_NO_ELO",
   REFRESH = "REFRESH",
   SPECTATE = "SPECTATE",
   LOCK = "LOCK",
@@ -377,6 +377,7 @@ export interface IPlayer {
   totalPlayerDamageDealt: number
   wildChance: number
   eggChance: number
+  goldenEggChance: number
   lightX: number
   lightY: number
 }
@@ -406,6 +407,7 @@ export interface IPokemon {
   skill: Ability
   passive: Passive
   items: SetSchema<Item>
+  tm: Ability | null
   shiny: boolean
   emotion: Emotion
   additional: boolean
@@ -483,13 +485,15 @@ export interface IPokemonEntity {
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent?: boolean
   ): void
   addLuck(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent?: boolean
   ): void
   addPP(
     value: number,
@@ -501,19 +505,22 @@ export interface IPokemonEntity {
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent?: boolean
   ): void
   addAttackSpeed(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent?: boolean
   ): void
   addMaxHP(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent?: boolean
   ): void
   addShield(
     value: number,
@@ -525,13 +532,15 @@ export interface IPokemonEntity {
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent?: boolean
   ): void
   addSpecialDefense(
     value: number,
     caster: IPokemonEntity,
     apBoost: number,
-    crit: boolean
+    crit: boolean,
+    permanent?: boolean
   ): void
   addCritChance(
     value: number,
@@ -551,6 +560,8 @@ export interface IPokemonEntity {
     apBoost: number,
     crit: boolean
   ): void
+  addItem(item: Item, permanent?: boolean): void
+  removeItem(item: Item, permanent?: boolean): void
   update(
     dt: number,
     board: Board,
@@ -625,6 +636,7 @@ export interface IStatus {
   paralysis: boolean
   pokerus: boolean
   locked: boolean
+  blinded: boolean
   armorReduction: boolean
   runeProtect: boolean
   electricField: boolean
@@ -636,12 +648,10 @@ export interface IStatus {
 export interface ICount {
   crit: number
   ult: number
-  petalDanceCount: number
   fieldCount: number
   soundCount: number
   fairyCritCount: number
   attackCount: number
-  growGroundCount: number
   fightingBlockCount: number
   dodgeCount: number
   powerLensCount: number
@@ -649,14 +659,9 @@ export interface ICount {
   tripleAttackCount: number
   staticHolderCount: number
   defensiveRibbonCount: number
-  earthquakeCount: number
-  mindBlownCount: number
   spellBlockedCount: number
   manaBurnCount: number
   moneyCount: number
-  futureSightCount: number
-  healOrderCount: number
-  attackOrderCount: number
   magmarizerCount: number
 }
 

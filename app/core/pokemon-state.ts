@@ -7,6 +7,7 @@ import {
   AttackType,
   HealType,
   PokemonActionState,
+  Stat,
   Team
 } from "../types/enum/Game"
 import { Item } from "../types/enum/Item"
@@ -20,6 +21,7 @@ import { logger } from "../utils/logger"
 import { max, min } from "../utils/number"
 import { chance, pickRandomIn } from "../utils/random"
 import Board, { Cell } from "./board"
+import { PeriodicEffect } from "./effect"
 import { PokemonEntity } from "./pokemon-entity"
 
 export default abstract class PokemonState {
@@ -81,7 +83,7 @@ export default abstract class PokemonState {
 
       let isAttackSuccessful = true
       let dodgeChance = target.dodge
-      if (pokemon.effects.has(Effect.GAS)) {
+      if (pokemon.status.blinded) {
         dodgeChance += 0.5
       }
       dodgeChance = max(0.9)(dodgeChance)
@@ -136,7 +138,9 @@ export default abstract class PokemonState {
         totalTakenDamage += takenDamage
       }
 
-      if (pokemon.attackType === AttackType.SPECIAL) {
+      if (target.effects.has(Effect.WONDER_ROOM)) {
+        specialDamage = Math.ceil(damage * (1 + pokemon.ap / 100))
+      } else if (pokemon.attackType === AttackType.SPECIAL) {
         specialDamage = damage
       } else {
         physicalDamage = damage
@@ -277,7 +281,7 @@ export default abstract class PokemonState {
       if (pokemon.items.has(Item.SILK_SCARF)) shield *= 1.3
 
       shield = Math.round(shield)
-      pokemon.shield += shield
+      pokemon.shield = min(0)(pokemon.shield + shield)
       if (caster && shield > 0) {
         if (pokemon.simulation.room.state.time < FIGHTING_PHASE_DURATION) {
           pokemon.simulation.room.broadcast(Transfer.POKEMON_HEAL, {
@@ -379,12 +383,18 @@ export default abstract class PokemonState {
         damage = Math.ceil(damage * 1.3)
       }
 
-      const def = pokemon.status.armorReduction
+      let def = pokemon.status.armorReduction
         ? Math.round(pokemon.def / 2)
         : pokemon.def
-      const speDef = pokemon.status.armorReduction
+      let speDef = pokemon.status.armorReduction
         ? Math.round(pokemon.speDef / 2)
         : pokemon.speDef
+
+      if (pokemon.effects.has(Effect.WONDER_ROOM)) {
+        const swap = def
+        def = speDef
+        speDef = swap
+      }
 
       let reducedDamage = damage
       if (attackType == AttackType.PHYSICAL) {
@@ -483,7 +493,7 @@ export default abstract class PokemonState {
         takenDamage = 0
         residualDamage = 0
         pokemon.status.triggerProtect(2000)
-        pokemon.items.delete(Item.SHINY_CHARM)
+        pokemon.removeItem(Item.SHINY_CHARM)
       }
 
       pokemon.life = Math.max(0, pokemon.life - residualDamage)
@@ -564,7 +574,7 @@ export default abstract class PokemonState {
         }
 
         if (pokemon.passive === Passive.PRIMEAPE) {
-          pokemon.refToBoardPokemon.atk += 1
+          pokemon.applyStat(Stat.ATK, 1, true)
         }
       }
 
@@ -638,6 +648,12 @@ export default abstract class PokemonState {
     this.updateCommands(pokemon, dt)
     pokemon.status.updateAllStatus(dt, pokemon, board)
 
+    pokemon.effectsSet.forEach((effect) => {
+      if (effect instanceof PeriodicEffect) {
+        effect.update(dt, pokemon)
+      }
+    })
+
     if (
       (pokemon.status.resurecting ||
         pokemon.status.freeze ||
@@ -648,61 +664,16 @@ export default abstract class PokemonState {
     }
 
     if (
-      pokemon.effects.has(Effect.TILLER) ||
-      pokemon.effects.has(Effect.DIGGER) ||
-      pokemon.effects.has(Effect.DRILLER) ||
-      pokemon.effects.has(Effect.DEEP_MINER)
-    ) {
-      pokemon.growGroundTimer -= dt
-      if (pokemon.growGroundTimer <= 0 && pokemon.count.growGroundCount < 5) {
-        pokemon.growGroundTimer = 3000
-        pokemon.count.growGroundCount += 1
-        if (pokemon.effects.has(Effect.TILLER)) {
-          pokemon.addDefense(1, pokemon, 0, false)
-          pokemon.addSpecialDefense(1, pokemon, 0, false)
-          pokemon.addAttack(1, pokemon, 0, false)
-        } else if (pokemon.effects.has(Effect.DIGGER)) {
-          pokemon.addDefense(2, pokemon, 0, false)
-          pokemon.addSpecialDefense(2, pokemon, 0, false)
-          pokemon.addAttack(2, pokemon, 0, false)
-        } else if (pokemon.effects.has(Effect.DRILLER)) {
-          pokemon.addDefense(3, pokemon, 0, false)
-          pokemon.addSpecialDefense(3, pokemon, 0, false)
-          pokemon.addAttack(3, pokemon, 0, false)
-        } else if (pokemon.effects.has(Effect.DEEP_MINER)) {
-          pokemon.addDefense(4, pokemon, 0, false)
-          pokemon.addSpecialDefense(4, pokemon, 0, false)
-          pokemon.addAttack(4, pokemon, 0, false)
-        }
-
-        if (
-          pokemon.items.has(Item.BIG_NUGGET) &&
-          pokemon.count.growGroundCount === 5 &&
-          player
-        ) {
-          player.addMoney(3, true, pokemon)
-          pokemon.count.moneyCount += 3
-        }
-      }
-    }
-
-    if (
       pokemon.effects.has(Effect.INGRAIN) ||
       pokemon.effects.has(Effect.GROWTH) ||
       pokemon.effects.has(Effect.SPORE)
     ) {
       if (pokemon.grassHealCooldown - dt <= 0) {
-        let heal = pokemon.effects.has(Effect.SPORE)
+        const heal = pokemon.effects.has(Effect.SPORE)
           ? 30
           : pokemon.effects.has(Effect.GROWTH)
             ? 15
             : 7
-        if (
-          pokemon.effects.has(Effect.HYDRATATION) &&
-          pokemon.simulation.weather === Weather.RAIN
-        ) {
-          heal += 5
-        }
         pokemon.handleHeal(heal, pokemon, 0, false)
         pokemon.grassHealCooldown = 2000
         pokemon.simulation.room.broadcast(Transfer.ABILITY, {
@@ -867,7 +838,10 @@ export default abstract class PokemonState {
       pokemon.effects.delete(Effect.HAIL)
     }
 
-    if (pokemon.effects.has(Effect.LAVA) && !pokemon.types.has(Synergy.FIRE)) {
+    if (
+      pokemon.effects.has(Effect.EMBER) &&
+      !(pokemon.types.has(Synergy.FIRE) || pokemon.types.has(Synergy.FLYING))
+    ) {
       pokemon.handleDamage({
         damage: 10,
         board,

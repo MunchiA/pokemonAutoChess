@@ -2,6 +2,7 @@ import Player from "../models/colyseus-models/player"
 import { Pokemon, PokemonClasses } from "../models/colyseus-models/pokemon"
 import PokemonFactory from "../models/pokemon-factory"
 import { EvolutionTime } from "../types/Config"
+import { Ability } from "../types/enum/Ability"
 import { PokemonActionState } from "../types/enum/Game"
 import { ItemComponents, Item, ShinyItems } from "../types/enum/Item"
 import { Passive } from "../types/enum/Passive"
@@ -25,9 +26,11 @@ export abstract class EvolutionRule {
   ): boolean
   abstract evolve(pokemon: Pokemon, player: Player, stageLevel: number): Pokemon
   divergentEvolution?: DivergentEvolution
+  stacks: number
 
   constructor(divergentEvolution?: DivergentEvolution) {
     if (divergentEvolution) this.divergentEvolution = divergentEvolution
+    this.stacks = 0
   }
 
   getEvolution(
@@ -64,6 +67,7 @@ export abstract class EvolutionRule {
         pokemonEvolved.passive !== Passive.COSMOEM
       ) {
         pokemon.hp += 10
+        pokemon.evolutionRule.stacks++
       }
       // check evolutions again if it can evolve twice in a row
       pokemon.evolutionRule.tryEvolve(pokemon, player, stageLevel)
@@ -147,10 +151,6 @@ export class CountEvolutionRule extends EvolutionRule {
     )
 
     carryOverPermanentStats(pokemonEvolved, pokemonsBeforeEvolution)
-  
-    if (pokemon.onEvolve) {
-      pokemon.onEvolve({ pokemonEvolved, pokemonsBeforeEvolution, player })
-    }
 
     shuffleArray(itemsToAdd)
     for (const item of itemsToAdd) {
@@ -158,6 +158,9 @@ export class CountEvolutionRule extends EvolutionRule {
         player.items.push(item)
       } else {
         pokemonEvolved.items.add(item)
+        if (item === Item.SHINY_CHARM) {
+          pokemonEvolved.shiny = true
+        }
       }
     }
 
@@ -180,6 +183,10 @@ export class CountEvolutionRule extends EvolutionRule {
       player.board.set(pokemonEvolved.id, pokemonEvolved)
     } else {
       logger.error("no coordinate found for new evolution")
+    }
+
+    if (pokemon.afterEvolve) {
+      pokemon.afterEvolve({ pokemonEvolved, pokemonsBeforeEvolution, player })
     }
 
     return pokemonEvolved
@@ -224,7 +231,6 @@ export class ItemEvolutionRule extends EvolutionRule {
       pokemon,
       pokemonEvolutionName
     )
-    carryOverPermanentStats(pokemonEvolved, [pokemon])
     return pokemonEvolved
   }
 }
@@ -272,7 +278,6 @@ export class HatchEvolutionRule extends EvolutionRule {
       pokemon,
       pokemonEvolutionName
     )
-    carryOverPermanentStats(pokemonEvolved, [pokemon])
     return pokemonEvolved
   }
 }
@@ -304,23 +309,31 @@ export class ConditionBasedEvolutionRule extends EvolutionRule {
       pokemon,
       pokemonEvolutionName
     )
-    carryOverPermanentStats(pokemonEvolved, [pokemon])
     return pokemonEvolved
   }
 }
-function carryOverPermanentStats(pokemonEvolved: Pokemon, pokemonsBeforeEvolution: Pokemon[]) {
-    // carry over the permanent stat buffs
-    const permanentBuffStats = ["hp", "atk", "def", "speDef"] as const
-    for (const stat of permanentBuffStats) {
-      const statStacked = sum(
-        pokemonsBeforeEvolution.map(
-          (p) => p[stat] - new PokemonClasses[p.name]()[stat]
-        )
-      )
-      if (statStacked > 0) {
-        pokemonEvolved[stat] += statStacked
-      }
+export function carryOverPermanentStats(
+  pokemonEvolved: Pokemon,
+  pokemonsBeforeEvolution: Pokemon[]
+) {
+  // carry over the permanent stat buffs
+  const permanentBuffStats = ["hp", "atk", "def", "speDef"] as const
+  const baseData = new PokemonClasses[pokemonsBeforeEvolution[0].name]()
+  for (const stat of permanentBuffStats) {
+    const statStacked = sum(
+      pokemonsBeforeEvolution.map((p) => p[stat] - baseData[stat])
+    )
+    if (statStacked > 0) {
+      pokemonEvolved[stat] += statStacked
     }
+  }
 
+  // carry over TM
+  const existingTms = pokemonsBeforeEvolution
+    .map((p) => p.tm)
+    .filter<Ability>((tm): tm is Ability => tm != null)
+  if (existingTms.length > 0) {
+    pokemonEvolved.tm = pickRandomIn(existingTms)
+    pokemonEvolved.skill = pokemonEvolved.tm
+  }
 }
-

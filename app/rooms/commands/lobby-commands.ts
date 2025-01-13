@@ -7,7 +7,6 @@ import {
   getTournamentStage,
   makeBrackets
 } from "../../core/tournament-logic"
-import PokemonConfig from "../../models/colyseus-models/pokemon-config"
 import {
   TournamentBracketSchema,
   TournamentPlayerSchema
@@ -20,8 +19,8 @@ import UserMetadata, {
   IUserMetadata
 } from "../../models/mongo-models/user-metadata"
 import { PRECOMPUTED_EMOTIONS_PER_POKEMON_INDEX } from "../../models/precomputed/precomputed-emotions"
+import { getPokemonData } from "../../models/precomputed/precomputed-pokemon-data"
 import { PRECOMPUTED_POKEMONS_PER_RARITY } from "../../models/precomputed/precomputed-rarity"
-import { getPortraitSrc } from "../../utils/avatar"
 import {
   addBotToDatabase,
   deleteBotFromDatabase,
@@ -44,20 +43,24 @@ import {
   BoosterRarityProbability,
   DUST_PER_BOOSTER,
   DUST_PER_SHINY,
+  MAX_PLAYERS_PER_GAME,
   getEmotionCost,
-  MAX_PLAYERS_PER_GAME
+  BoosterPriceByRarity
 } from "../../types/Config"
+import { Ability } from "../../types/enum/Ability"
 import { CloseCodes } from "../../types/enum/CloseCodes"
 import { EloRank } from "../../types/enum/EloRank"
 import { GameMode, Rarity } from "../../types/enum/Game"
 import { Language } from "../../types/enum/Language"
-import { Pkm, PkmIndex, Unowns } from "../../types/enum/Pokemon"
+import { Pkm, PkmByIndex, PkmIndex, Unowns } from "../../types/enum/Pokemon"
 import { StarterAvatars } from "../../types/enum/Starters"
 import { ITournamentPlayer } from "../../types/interfaces/Tournament"
 import { sum } from "../../utils/array"
+import { getPortraitSrc } from "../../utils/avatar"
 import { getRank } from "../../utils/elo"
 import { logger } from "../../utils/logger"
 import { cleanProfanity } from "../../utils/profanity-filter"
+import { wait } from "../../utils/promise"
 import { chance, pickRandomIn } from "../../utils/random"
 import { convertSchemaToRawObject, values } from "../../utils/schemas"
 import CustomLobbyRoom from "../custom-lobby-room"
@@ -383,7 +386,11 @@ function pickRandomPokemonBooster(guarantedUnique: boolean): PkmWithConfig {
       if (seed < threshold) {
         const candidates: Pkm[] = (
           PRECOMPUTED_POKEMONS_PER_RARITY[rarity] ?? []
-        ).filter((p) => Unowns.includes(p) === false)
+        ).filter(
+          (p) =>
+            Unowns.includes(p) === false &&
+            getPokemonData(p).skill !== Ability.DEFAULT
+        )
         if (candidates.length > 0) {
           pkm = pickRandomIn(candidates) as Pkm
           break
@@ -661,18 +668,23 @@ export class BuyBoosterCommand extends Command<
   async execute({ client, index }: { client: Client; index: string }) {
     try {
       const user = this.room.users.get(client.auth.uid)
-      const BOOSTER_COST = 500
       if (!user) return
+
+      const pkm = PkmByIndex[index]
+      if (!pkm) return
+
+      const rarity = getPokemonData(pkm).rarity
+      const boosterCost = BoosterPriceByRarity[rarity]
 
       const mongoUser = await UserMetadata.findOneAndUpdate(
         {
           uid: client.auth.uid,
-          [`pokemonCollection.${index}.dust`]: { $gte: BOOSTER_COST }
+          [`pokemonCollection.${index}.dust`]: { $gte: boosterCost }
         },
         {
           $inc: {
             booster: 1,
-            [`pokemonCollection.${index}.dust`]: -BOOSTER_COST
+            [`pokemonCollection.${index}.dust`]: -boosterCost
           }
         },
         { new: true }
@@ -716,7 +728,12 @@ export class OnSearchCommand extends Command<
 > {
   async execute({ client, name }: { client: Client; name: string }) {
     try {
-      const regExp = new RegExp("^" + name)
+      const searchTerm = name.trim()
+      const escapedSearchTerm = searchTerm.replace(
+        /[-\/\\^$*+?.()|[\]{}]/g,
+        "\\$&"
+      )
+      const regExp = new RegExp("^" + escapedSearchTerm, "i")
       const users = await UserMetadata.find(
         { displayName: { $regex: regExp, $options: "i" } },
         ["uid", "elo", "displayName", "level", "avatar"],
@@ -981,19 +998,52 @@ export class JoinOrOpenRoomCommand extends Command<
       }
 
       case GameMode.RANKED: {
-        let userRank = getRank(user.elo)
-        if (userRank === EloRank.MASTERBALL) userRank = EloRank.ULTRABALL
+        const userRank = getRank(user.elo)
+        let minRank = EloRank.LEVEL_BALL
+        let maxRank = EloRank.BEAST_BALL
+        switch (userRank) {
+          case EloRank.LEVEL_BALL:
+          case EloRank.NET_BALL:
+            minRank = EloRank.LEVEL_BALL
+            maxRank = EloRank.NET_BALL
+            break
+          case EloRank.SAFARI_BALL:
+          case EloRank.LOVE_BALL:
+          case EloRank.PREMIER_BALL:
+            minRank = EloRank.SAFARI_BALL
+            maxRank = EloRank.PREMIER_BALL
+            break
+          case EloRank.QUICK_BALL:
+          case EloRank.POKE_BALL:
+          case EloRank.SUPER_BALL:
+            minRank = EloRank.QUICK_BALL
+            maxRank = EloRank.SUPER_BALL
+            break
+          case EloRank.ULTRA_BALL:
+          case EloRank.MASTER_BALL:
+          case EloRank.BEAST_BALL:
+            minRank = EloRank.ULTRA_BALL
+            maxRank = EloRank.BEAST_BALL
+            break
+        }
         const existingRanked = this.room.rooms?.find(
           (room) =>
             room.name === "preparation" &&
             room.metadata?.gameMode === GameMode.RANKED &&
-            room.metadata?.minRank === userRank &&
+            room.metadata?.minRank === minRank &&
             room.clients < MAX_PLAYERS_PER_GAME
         )
         if (existingRanked) {
           client.send(Transfer.REQUEST_ROOM, existingRanked.roomId)
         } else {
-          return [new OpenGameCommand().setPayload({ gameMode, client })]
+          return [
+            new OpenGameCommand().setPayload({
+              gameMode,
+              client,
+              minRank,
+              maxRank
+            })
+          ]
         }
         break
       }
@@ -1021,34 +1071,29 @@ export class OpenGameCommand extends Command<
   {
     gameMode: GameMode
     client: Client
+    minRank?: EloRank
+    maxRank?: EloRank
   }
 > {
   async execute({
     gameMode,
-    client
+    client,
+    minRank,
+    maxRank
   }: {
     gameMode: GameMode
     client: Client
+    minRank?: EloRank
+    maxRank?: EloRank
   }) {
     const user = this.room.users.get(client.auth.uid)
     if (!user) return
     let roomName = `${user.displayName}'${user.displayName.endsWith("s") ? "" : "s"} room`
-    let minRank: EloRank | null = null
-    let maxRank: EloRank | null = null
     let noElo: boolean = false
     let password: string | null = null
     let ownerId: string | null = null
 
     if (gameMode === GameMode.RANKED) {
-      let rank = getRank(user.elo)
-      if (rank === EloRank.MASTERBALL || rank === EloRank.ULTRABALL) {
-        rank = EloRank.ULTRABALL
-        minRank = EloRank.ULTRABALL
-        maxRank = EloRank.MASTERBALL
-      } else {
-        minRank = rank
-        maxRank = rank
-      }
       roomName = "Ranked Match"
     } else if (gameMode === GameMode.SCRIBBLE) {
       roomName = "Smeargle's Scribble"
@@ -1249,6 +1294,7 @@ export class CreateTournamentLobbiesCommand extends Command<
           tournamentId,
           bracketId
         })
+        await wait(1000)
       }
 
       //save brackets to db

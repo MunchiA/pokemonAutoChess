@@ -29,6 +29,7 @@ import { displayAbility } from "./abilities-animations"
 import PokemonSprite from "./pokemon"
 import PokemonDetail from "./pokemon-detail"
 import { pickRandomIn } from "../../../../utils/random"
+import { displayBoost } from "./boosts-animations"
 
 export default class BattleManager {
   group: GameObjects.Group
@@ -117,13 +118,18 @@ export default class BattleManager {
       this.simulation?.id == simulationId &&
       this.pokemonSprites.has(pokemon.id)
     ) {
-      const pkm = this.pokemonSprites.get(pokemon.id)!
-      this.animationManager.animatePokemon(
-        pkm,
-        PokemonActionState.HURT,
-        this.flip
-      )
-      pkm.deathAnimation()
+      const pokemonSprite = this.pokemonSprites.get(pokemon.id)!
+      if (pokemon.passive === Passive.INANIMATE && pokemon.life > 0) {
+        // pillar is thrown, skip death animation
+        setTimeout(() => pokemonSprite.destroy(), 500)
+      } else {
+        this.animationManager.animatePokemon(
+          pokemonSprite,
+          PokemonActionState.HURT,
+          this.flip
+        )
+        pokemonSprite.deathAnimation()
+      }
     }
   }
 
@@ -142,6 +148,7 @@ export default class BattleManager {
     pokemon: IPokemonEntity,
     field: NonFunctionPropNames<Status>
   ) {
+    if (pokemon.passive === Passive.INANIMATE) return // No animation for statuses for inanimate pokemons
     if (
       this.simulation?.id == simulationId &&
       this.pokemonSprites.has(pokemon.id)
@@ -241,6 +248,12 @@ export default class BattleManager {
           pkm.addLocked()
         } else {
           pkm.removeLocked()
+        }
+      } else if (field === "blinded") {
+        if (pokemon.status.blinded) {
+          pkm.addBlinded()
+        } else {
+          pkm.removeBlinded()
         }
       } else if (field === "armorReduction") {
         if (pokemon.status.armorReduction) {
@@ -363,49 +376,7 @@ export default class BattleManager {
           )
           pkm.specialAttackAnimation(this.group, value)
         }
-      } else if (field == "petalDanceCount") {
-        if (value != 0) {
-          displayAbility(
-            this.scene,
-            [],
-            Ability.PETAL_DANCE,
-            pkm.orientation,
-            pkm.positionX,
-            pkm.positionY,
-            pkm.targetX ?? -1,
-            pkm.targetY ?? -1,
-            this.flip
-          )
-        }
-      } else if (field == "futureSightCount") {
-        if (value != 0) {
-          displayAbility(
-            this.scene,
-            [],
-            Ability.FUTURE_SIGHT,
-            pkm.orientation,
-            pkm.positionX,
-            pkm.positionY,
-            pkm.targetX ?? -1,
-            pkm.targetY ?? -1,
-            this.flip
-          )
-        }
-      } else if (field == "earthquakeCount") {
-        if (value != 0) {
-          displayAbility(
-            this.scene,
-            [],
-            Ability.EARTHQUAKE,
-            pkm.orientation,
-            pkm.positionX,
-            pkm.positionY,
-            pkm.targetX ?? -1,
-            pkm.targetY ?? -1,
-            this.flip
-          )
-        }
-      } else if (field == "fieldCount") {
+      } else if (field === "fieldCount") {
         if (value != 0) {
           displayAbility(
             this.scene,
@@ -419,26 +390,12 @@ export default class BattleManager {
             this.flip
           )
         }
-      } else if (field == "soundCount") {
+      } else if (field === "soundCount") {
         if (value != 0) {
           displayAbility(
             this.scene,
             [],
             Ability.ECHO,
-            pkm.orientation,
-            pkm.positionX,
-            pkm.positionY,
-            pkm.targetX ?? -1,
-            pkm.targetY ?? -1,
-            this.flip
-          )
-        }
-      } else if (field == "growGroundCount") {
-        if (value != 0) {
-          displayAbility(
-            this.scene,
-            [],
-            "GROUND_GROW",
             pkm.orientation,
             pkm.positionX,
             pkm.positionY,
@@ -461,7 +418,7 @@ export default class BattleManager {
             this.flip
           )
         }
-      } else if (field == "fairyCritCount") {
+      } else if (field === "fairyCritCount") {
         if (value != 0) {
           displayAbility(
             this.scene,
@@ -475,7 +432,7 @@ export default class BattleManager {
             this.flip
           )
         }
-      } else if (field == "powerLensCount") {
+      } else if (field === "powerLensCount") {
         if (value != 0) {
           displayAbility(
             this.scene,
@@ -489,7 +446,7 @@ export default class BattleManager {
             this.flip
           )
         }
-      } else if (field == "starDustCount") {
+      } else if (field === "starDustCount") {
         if (value != 0) {
           displayAbility(
             this.scene,
@@ -503,65 +460,27 @@ export default class BattleManager {
             this.flip
           )
         }
-      } else if (field == "mindBlownCount") {
-        if (value != 0) {
-          displayAbility(
-            this.scene,
-            [],
-            "MIND_BLOWN/hit",
-            pkm.orientation,
-            pkm.positionX,
-            pkm.positionY,
-            pkm.targetX ?? -1,
-            pkm.targetY ?? -1,
-            this.flip
-          )
-        }
-      } else if (field == "spellBlockedCount") {
+      } else if (field === "spellBlockedCount") {
         if (value != 0) {
           this.displayBlockedSpell(pkm.x, pkm.y)
         }
-      } else if (field == "manaBurnCount") {
+      } else if (field === "manaBurnCount") {
         if (value != 0) {
           this.displayManaBurn(pkm.x, pkm.y)
         }
-      } else if (field === "healOrderCount") {
-        if (value != 0) {
-          displayAbility(
-            this.scene,
-            [],
-            "HEAL_ORDER",
-            pkm.orientation,
-            pkm.positionX,
-            pkm.positionY,
-            pkm.targetX ?? -1,
-            pkm.targetY ?? -1,
-            this.flip
-          )
-        }
-      } else if (field === "attackOrderCount") {
-        if (value != 0) {
-          displayAbility(
-            this.scene,
-            [],
-            "ATTACK_ORDER",
-            pkm.orientation,
-            pkm.positionX,
-            pkm.positionY,
-            pkm.targetX ?? -1,
-            pkm.targetY ?? -1,
-            this.flip
-          )
-        }
-      } else if (field == "moneyCount") {
+      } else if (field === "moneyCount") {
         if (value > 0) {
           this.moneyAnimation(pkm.x, pkm.y, value - previousValue)
         }
-      } else if (field == "amuletCoinCount") {
+      } else if (field === "amuletCoinCount") {
         if (value > 0) {
           pkm.itemsContainer.updateCount(Item.AMULET_COIN, value)
         }
-      } else if (field == "attackCount") {
+      } else if (field === "bottleCapCount") {
+        if (value > 0) {
+          pkm.itemsContainer.updateCount(Item.GOLD_BOTTLE_CAP, value)
+        }
+      } else if (field === "attackCount") {
         if (value !== 0) {
           if (
             pkm.action == PokemonActionState.ATTACK &&
@@ -577,17 +496,17 @@ export default class BattleManager {
             )
           }
         }
-      } else if (field == "tripleAttackCount") {
+      } else if (field === "tripleAttackCount") {
         if (value !== 0) {
           this.displayTripleAttack(pkm.x, pkm.y)
         }
-      } else if (field == "upgradeCount") {
+      } else if (field === "upgradeCount") {
         pkm.itemsContainer.updateCount(Item.UPGRADE, value)
-      } else if (field == "soulDewCount") {
+      } else if (field === "soulDewCount") {
         pkm.itemsContainer.updateCount(Item.SOUL_DEW, value)
-      } else if (field == "defensiveRibbonCount") {
+      } else if (field === "defensiveRibbonCount") {
         pkm.itemsContainer.updateCount(Item.DEFENSIVE_RIBBON, value)
-      } else if (field == "magmarizerCount") {
+      } else if (field === "magmarizerCount") {
         pkm.itemsContainer.updateCount(Item.MAGMARIZER, value)
       }
     }
@@ -849,24 +768,8 @@ export default class BattleManager {
   }
 
   displayBoost(stat: Stat, positionX: number, positionY: number) {
-    const coordinates = transformAttackCoordinate(
-      positionX,
-      positionY,
-      this.flip
-    )
-    const boost = this.scene.add
-      .sprite(
-        coordinates[0],
-        coordinates[1] - 10,
-        "boosts",
-        `BOOST_${stat}/000.png`
-      )
-      .setDepth(7)
-      .setScale(2, 2)
-    boost.anims.play(`BOOST_${stat}`)
-    boost.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-      boost.destroy()
-    })
+    const coords = transformAttackCoordinate(positionX, positionY, this.flip)
+    displayBoost(this.scene, coords[0], coords[1], stat)
   }
 
   displayDodge(x: number, y: number) {
@@ -1080,15 +983,15 @@ export default class BattleManager {
       })
     }
 
-    if (event.effect === Effect.GAS) {
+    if (event.effect === Effect.SMOKE) {
       const sprite = this.scene.add.sprite(
         coordinates[0],
         coordinates[1],
         "abilities",
-        "GAS/000.png"
+        "SMOKE/000.png"
       )
       sprite.setDepth(7)
-      sprite.anims.play(Effect.GAS)
+      sprite.anims.play(Effect.SMOKE)
       sprite.setScale(3, 3)
       sprite.setAlpha(0)
       this.boardEventSprites[index] = sprite
@@ -1106,11 +1009,11 @@ export default class BattleManager {
         coordinates[0],
         coordinates[1],
         "abilities",
-        `${Effect.GAS}/000.png`
+        `${Effect.SMOKE}/000.png`
       )
       sprite.setDepth(7)
       sprite.setScale(3, 3)
-      sprite.anims.play(Effect.GAS)
+      sprite.anims.play(Effect.SMOKE)
       sprite.setTint(0xa0ff20)
       sprite.setFlipX(true)
       sprite.setAlpha(0)
@@ -1148,7 +1051,7 @@ export default class BattleManager {
     if (event.effect === Effect.SPIKES) {
       const sprite = this.scene.add.sprite(
         coordinates[0],
-        coordinates[1]+16,
+        coordinates[1] + 16,
         "abilities",
         "SPIKES/001.png"
       )
@@ -1170,7 +1073,7 @@ export default class BattleManager {
       const spriteNumber = pickRandomIn([0, 1, 2]).toString()
       const sprite = this.scene.add.sprite(
         coordinates[0],
-        coordinates[1]+16,
+        coordinates[1] + 16,
         "abilities",
         "TOXIC_SPIKES/00" + spriteNumber + ".png"
       )
@@ -1230,15 +1133,15 @@ export default class BattleManager {
       })
     }
 
-    if (event.effect === Effect.LAVA) {
+    if (event.effect === Effect.EMBER) {
       const sprite = this.scene.add.sprite(
         coordinates[0],
-        coordinates[1]+12,
+        coordinates[1] + 12,
         "abilities",
-        `${Effect.LAVA}/000.png`
+        `${Effect.EMBER}/000.png`
       )
       sprite.setDepth(1).setScale(2).setAlpha(0)
-      sprite.anims.play(Effect.LAVA)
+      sprite.anims.play(Effect.EMBER)
       this.boardEventSprites[index] = sprite
       this.group.add(sprite)
 

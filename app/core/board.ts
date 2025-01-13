@@ -370,6 +370,30 @@ export default class Board {
     }
   }
 
+  getClosestAvailablePlace(
+    targetX: number,
+    targetY: number
+  ): { x: number; y: number; distance: number } | null {
+    const candidateCells = new Array<{
+      distance: number
+      x: number
+      y: number
+    }>()
+
+    this.forEach((x: number, y: number, value: PokemonEntity | undefined) => {
+      if (value === undefined) {
+        candidateCells.push({
+          x,
+          y,
+          distance: distanceM(x, y, targetX, targetY)
+        })
+      }
+    })
+
+    candidateCells.sort((a, b) => a.distance - b.distance)
+    return candidateCells[0] ?? null
+  }
+
   getFarthestTargetCoordinateAvailablePlace(
     pokemon: IPokemonEntity,
     targetAlly: boolean = false

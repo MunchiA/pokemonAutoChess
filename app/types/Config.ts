@@ -110,7 +110,8 @@ export const SynergyTriggers: { [key in Synergy]: number[] } = {
   [Synergy.AMORPHOUS]: [3, 5, 7]
 }
 
-export const RequiredStageLevelForXpElligibility = 10
+// games that finish before level 10 are not counted for XP and ELO to avoid potential abuse
+export const MinStageLevelForGameToCount = 10
 
 export const ExpPlace = [700, 400, 350, 300, 250, 200, 200, 200]
 
@@ -130,12 +131,25 @@ export const BoosterRarityProbability: { [key in Rarity]: number } = {
   [Rarity.COMMON]: 0.12,
   [Rarity.UNCOMMON]: 0.2,
   [Rarity.RARE]: 0.2,
-  [Rarity.EPIC]: 0.15,
+  [Rarity.EPIC]: 0.18,
   [Rarity.ULTRA]: 0.06,
-  [Rarity.UNIQUE]: 0.08,
+  [Rarity.UNIQUE]: 0.1,
   [Rarity.LEGENDARY]: 0.05,
-  [Rarity.HATCH]: 0.1,
+  [Rarity.HATCH]: 0.06,
   [Rarity.SPECIAL]: 0.03
+}
+
+// should be proportional to rarity, see above
+export const BoosterPriceByRarity: { [key in Rarity]: number } = {
+  [Rarity.COMMON]: 600,
+  [Rarity.UNCOMMON]: 1000,
+  [Rarity.RARE]: 1000,
+  [Rarity.EPIC]: 900,
+  [Rarity.ULTRA]: 300,
+  [Rarity.UNIQUE]: 500,
+  [Rarity.LEGENDARY]: 250,
+  [Rarity.HATCH]: 300,
+  [Rarity.SPECIAL]: 500 // special is a bit more expensive due to unowns farming
 }
 
 export const DITTO_RATE = 0.005
@@ -161,7 +175,7 @@ export const RarityProbabilityPerLevel: { [key: number]: number[] } = {
 }
 
 export const EvolutionTime = {
-  EGG_HATCH: 3,
+  EGG_HATCH: 5,
   EVOLVE_HATCH: 5
 }
 
@@ -197,8 +211,6 @@ export const UniqueShop = new Array<PkmProposition>(
   Pkm.SPIRITOMB,
   Pkm.ROTOM,
   Pkm.PHIONE,
-  Pkm.COBALION,
-  Pkm.KELDEO,
   Pkm.TAPU_KOKO,
   Pkm.TAPU_LELE,
   Pkm.SEVIPER,
@@ -212,7 +224,6 @@ export const UniqueShop = new Array<PkmProposition>(
   Pkm.TAPU_FINI,
   Pkm.MIMIKYU,
   Pkm.TYROGUE,
-  Pkm.VIRIZION,
   Pkm.ZERAORA,
   Pkm.SHUCKLE,
   Pkm.LUNATONE,
@@ -325,7 +336,11 @@ export const LegendaryShop = new Array<PkmProposition>(
   Pkm.ENAMORUS,
   Pkm.MAGEARNA,
   Pkm.MELMETAL,
-  Pkm.ZYGARDE_50
+  Pkm.ZYGARDE_50,
+  Pkm.TERRAKION,
+  Pkm.VIRIZION,
+  Pkm.COBALION,
+  Pkm.KELDEO
 )
 
 export const NB_UNIQUE_PROPOSITIONS = 6
@@ -361,7 +376,7 @@ export const FishRarityProbability: {
 
 export const MAX_POOL_CONNECTIONS_SIZE = 16
 export const MAX_CONCURRENT_PLAYERS_ON_SERVER = 1000
-export const MAX_CONCURRENT_PLAYERS_ON_LOBBY = 100
+export const MAX_CONCURRENT_PLAYERS_ON_LOBBY = 500
 export const MAX_PLAYERS_PER_GAME = 8
 export const MIN_HUMAN_PLAYERS = process.env.MIN_HUMAN_PLAYERS
   ? parseInt(process.env.MIN_HUMAN_PLAYERS)
@@ -396,11 +411,17 @@ export const AdditionalPicksStages = [5, 8, 11]
 export const PortalCarouselStages = [10, 20]
 
 export const EloRankThreshold: { [key in EloRank]: number } = {
-  [EloRank.BEGINNER]: 0,
-  [EloRank.POKEBALL]: 900,
-  [EloRank.GREATBALL]: 1100,
-  [EloRank.ULTRABALL]: 1250,
-  [EloRank.MASTERBALL]: 1400
+  [EloRank.LEVEL_BALL]: 0,
+  [EloRank.NET_BALL]: 1050,
+  [EloRank.SAFARI_BALL]: 1100,
+  [EloRank.LOVE_BALL]: 1150,
+  [EloRank.PREMIER_BALL]: 1200,
+  [EloRank.QUICK_BALL]: 1250,
+  [EloRank.POKE_BALL]: 1300,
+  [EloRank.SUPER_BALL]: 1350,
+  [EloRank.ULTRA_BALL]: 1400,
+  [EloRank.MASTER_BALL]: 1500,
+  [EloRank.BEAST_BALL]: 1700
 }
 
 export const WeatherThreshold: { [weather in Weather]: number } = {
@@ -632,7 +653,7 @@ export const ItemStats: Record<Item, { [stat in Stat]?: number }> = {
   [Item.PROTECTIVE_PADS]: { [Stat.SHIELD]: 60, [Stat.ATK]: 6 },
   [Item.MAX_REVIVE]: { [Stat.SHIELD]: 15, [Stat.DEF]: 2 },
   [Item.ASSAULT_VEST]: { [Stat.SPE_DEF]: 20 },
-  [Item.AMULET_COIN]: { [Stat.SPE_DEF]: 2, [Stat.ATK]: 3 },
+  [Item.AMULET_COIN]: {},
   [Item.POKE_DOLL]: { [Stat.SPE_DEF]: 2, [Stat.DEF]: 2 },
   [Item.RED_ORB]: { [Stat.ATK]: 10 },
   [Item.FLAME_ORB]: { [Stat.ATK]: 5, [Stat.DEF]: 2 },
@@ -716,7 +737,23 @@ export const ItemStats: Record<Item, { [stat in Stat]?: number }> = {
   [Item.TEAL_MASK]: { [Stat.SHIELD]: 50 },
   [Item.WELLSPRING_MASK]: { [Stat.SHIELD]: 50 },
   [Item.CORNERSTONE_MASK]: { [Stat.SHIELD]: 50 },
-  [Item.HEARTHFLAME_MASK]: { [Stat.SHIELD]: 50 }
+  [Item.HEARTHFLAME_MASK]: { [Stat.SHIELD]: 50 },
+  [Item.TM_BIDE]: {},
+  [Item.TM_BRICK_BREAK]: {},
+  [Item.TM_BULK_UP]: {},
+  [Item.TM_PAYDAY]: {},
+  [Item.TM_PSYCH_UP]: {},
+  [Item.TM_RAGE]: {},
+  [Item.TM_RETALIATE]: {},
+  [Item.TM_TAUNT]: {},
+  [Item.HM_CUT]: {},
+  [Item.HM_FLY]: {},
+  [Item.HM_FLASH]: {},
+  [Item.HM_ROCK_SMASH]: {},
+  [Item.HM_STRENGTH]: {},
+  [Item.HM_SURF]: {},
+  [Item.HM_WATERFALL]: {},
+  [Item.HM_WHIRLPOOL]: {}
 }
 
 export type TilesetExchangeFile = {

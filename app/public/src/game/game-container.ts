@@ -130,6 +130,7 @@ class GameContainer {
       "wound",
       "enraged",
       "locked",
+      "blinded",
       "magicBounce",
       "tree"
     ]
@@ -191,28 +192,22 @@ class GameContainer {
       "crit",
       "dodgeCount",
       "ult",
-      "petalDanceCount",
-      "futureSightCount",
-      "earthquakeCount",
       "fieldCount",
       "soundCount",
-      "growGroundCount",
       "fightingBlockCount",
       "fairyCritCount",
       "powerLensCount",
       "starDustCount",
-      "mindBlownCount",
       "spellBlockedCount",
       "manaBurnCount",
       "moneyCount",
       "amuletCoinCount",
+      "bottleCapCount",
       "attackCount",
       "tripleAttackCount",
       "upgradeCount",
       "soulDewCount",
       "defensiveRibbonCount",
-      "attackOrderCount",
-      "healOrderCount",
       "magmarizerCount"
     ]
 
@@ -383,7 +378,8 @@ class GameContainer {
           "hp",
           "atk",
           "ap",
-          "shiny"
+          "shiny",
+          "skill"
         ]
         fields.forEach((field) => {
           pokemon.listen(field, (value, previousValue) => {

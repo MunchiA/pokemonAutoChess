@@ -22,17 +22,32 @@ import PreparationRoom from "../preparation-room"
 import { CloseCodes } from "../../types/enum/CloseCodes"
 import { getRank } from "../../utils/elo"
 import { SpecialGameRule } from "../../types/enum/SpecialGameRule"
+import { UserRecord } from "firebase-admin/lib/auth/user-record"
+import { setTimeout } from "node:timers/promises"
+import { AbortError } from "node-fetch"
 
 export class OnJoinCommand extends Command<
   PreparationRoom,
   {
-    client: Client
+    client: Client<undefined, UserRecord>
     options: any
-    auth: any
+    auth: UserRecord
   }
 > {
   async execute({ client, options, auth }) {
     try {
+      const timeoutDateStr = await this.room.presence.hget(
+        client.auth.uid,
+        "user_timeout"
+      )
+      if (timeoutDateStr) {
+        const timeout = new Date(timeoutDateStr).getTime()
+        if (timeout > Date.now()) {
+          client.leave(CloseCodes.USER_TIMEOUT)
+          return
+        }
+      }
+
       const numberOfHumanPlayers = values(this.state.users).filter(
         (u) => !u.isBot
       ).length
@@ -403,6 +418,10 @@ export class OnRoomChangeSpecialRule extends Command<
     try {
       if (client.auth?.uid == this.state.ownerId) {
         this.state.specialGameRule = specialRule
+        if (specialRule != null) {
+          this.state.noElo = true
+          this.room.setNoElo(true)
+        }
         const leader = this.state.users.get(client.auth.uid)
         this.room.state.addMessage({
           author: "Server",
@@ -423,7 +442,7 @@ export class OnRoomChangeSpecialRule extends Command<
   }
 }
 
-export class OnToggleEloCommand extends Command<
+export class OnChangeNoEloCommand extends Command<
   PreparationRoom,
   {
     client: Client
@@ -437,7 +456,10 @@ export class OnToggleEloCommand extends Command<
         this.state.noElo != noElo
       ) {
         this.state.noElo = noElo
-        this.room.toggleElo(noElo)
+        if (noElo === false) {
+          this.room.state.specialGameRule = null
+        }
+        this.room.setNoElo(noElo)
         const leader = this.state.users.get(client.auth.uid)
         this.room.state.addMessage({
           author: "Server",
@@ -605,24 +627,44 @@ export class OnToggleReadyCommand extends Command<
         // auto start when ranked lobby is full and all ready
         this.room.state.addMessage({
           authorId: "server",
-          payload: `Lobby is full, starting match...`
+          payload: "Lobby is full, starting match in 3..."
         })
 
-        if (
-          [GameMode.RANKED, GameMode.SCRIBBLE].includes(this.state.gameMode)
-        ) {
-          // open another one
-          this.room.presence.publish("lobby-full", {
-            gameMode: this.state.gameMode,
-            minRank: this.state.minRank,
-            noElo: this.state.noElo
-          })
-        }
-
-        return [new OnGameStartRequestCommand()]
+        return new CheckAutoStartRoom()
       }
     } catch (error) {
       logger.error(error)
+    }
+  }
+}
+
+export class CheckAutoStartRoom extends Command<PreparationRoom, void> {
+  async execute() {
+    try {
+      this.state.abortOnPlayerLeave = new AbortController()
+      const signal = this.state.abortOnPlayerLeave.signal
+      await setTimeout(3000, null, { signal })
+
+      this.room.state.addMessage({
+        authorId: "server",
+        payload: "Starting match..."
+      })
+
+      if ([GameMode.RANKED, GameMode.SCRIBBLE].includes(this.state.gameMode)) {
+        // open another one
+        this.room.presence.publish("lobby-full", {
+          gameMode: this.state.gameMode,
+          minRank: this.state.minRank,
+          noElo: this.state.noElo
+        })
+      }
+
+      return new OnGameStartRequestCommand()
+    } catch (e) {
+      this.room.state.addMessage({
+        authorId: "server",
+        payload: "Waiting for the room to fill up."
+      })
     }
   }
 }

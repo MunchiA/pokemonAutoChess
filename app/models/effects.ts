@@ -3,7 +3,6 @@ import { Pokemon } from "../models/colyseus-models/pokemon"
 import { SynergyTriggers } from "../types/Config"
 import { Ability } from "../types/enum/Ability"
 import { Effect } from "../types/enum/Effect"
-import { Passive } from "../types/enum/Passive"
 import { Synergy, SynergyEffects } from "../types/enum/Synergy"
 import { isOnBench } from "../utils/board"
 import Synergies from "./colyseus-models/synergies"
@@ -35,9 +34,6 @@ export class Effects extends SetSchema<Effect> {
         }
         if (p.skill === Ability.PSYCHIC_SURGE) {
           this.add(Effect.PSYCHIC_TERRAIN)
-        }
-        if (p.passive === Passive.HYDRATATION) {
-          this.add(Effect.HYDRATATION)
         }
       }
     })

@@ -44,6 +44,20 @@ export function throttle<T extends (...args: any) => any>(
   }
 }
 
+// prevent concurrent execution of async fn
+export function block<T extends (...args: any) => Promise<any>>(fn: T) {
+  let existingPromise: Promise<any> | null = null
+  return async function (this: any, ...args: any[]) {
+    if (existingPromise) {
+      return existingPromise
+    }
+    existingPromise = fn.apply(this, args)
+    const result = await existingPromise
+    existingPromise = null
+    return result
+  }
+}
+
 // repeat fn several times
 export const repeat = (n: number) => (cb: (i: number) => void) => {
   for (let i = 0; i < n; i++) {
