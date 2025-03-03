@@ -43,6 +43,7 @@
     "deploy-live": "pm2 deploy production update",
     "stop": "sudo systemctl stop pokemon-server.service",
     "restart": "sudo systemctl stop pokemon-server.service && sudo systemctl start pokemon-server.service",
+    "update": "sudo systemctl stop pokemon-server.service && cd edit/assetpack && npm run assetpack && sudo systemctl start pokemon-server.service",
     "service": "sudo systemctl start pokemon-server.service"
   },
   "dependencies": {
