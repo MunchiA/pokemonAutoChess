@@ -31,7 +31,7 @@ jobs:
       - name: Merge Upstream Changes
         run: |
           git checkout master
-          git merge upstream/master --strategy-option theirs
+          git merge upstream/master --strategy-option ours --allow-unrelated-histories
 
       - name: Push to Origin
         run: |
