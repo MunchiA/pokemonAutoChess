@@ -24,7 +24,6 @@ import { getRank } from "../../utils/elo"
 import { SpecialGameRule } from "../../types/enum/SpecialGameRule"
 import { UserRecord } from "firebase-admin/lib/auth/user-record"
 import { setTimeout } from "node:timers/promises"
-import { AbortError } from "node-fetch"
 
 export class OnJoinCommand extends Command<
   PreparationRoom,
@@ -47,99 +46,97 @@ export class OnJoinCommand extends Command<
           return
         }
       }
-
-      const numberOfHumanPlayers = values(this.state.users).filter(
-        (u) => !u.isBot
-      ).length
-      if (numberOfHumanPlayers >= MAX_PLAYERS_PER_GAME) {
-        client.leave(CloseCodes.ROOM_FULL)
-        return
-      }
       if (
         this.state.ownerId == "" &&
         this.state.gameMode === GameMode.CUSTOM_LOBBY
       ) {
         this.state.ownerId = auth.uid
       }
+
+      const u = await UserMetadata.findOne({ uid: auth.uid })
+      if (!u) {
+        client.leave(CloseCodes.USER_NOT_AUTHENTICATED)
+        return
+      }
+
       if (this.state.users.has(auth.uid)) {
         const user = this.state.users.get(auth.uid)!
         this.state.addMessage({
           authorId: "server",
-          payload: `${user.name} joined.`,
+          payload: `${user.name} is back.`,
           avatar: user.avatar
         })
       } else {
-        const u = await UserMetadata.findOne({ uid: auth.uid })
-        const numberOfHumanPlayers = values(this.state.users).filter(
+        const nbHumanPlayers = values(this.state.users).filter(
           (u) => !u.isBot
         ).length
-        if (numberOfHumanPlayers >= MAX_PLAYERS_PER_GAME) {
-          // lobby has been filled with someone else while waiting for the database
+        const isAdmin = u.role === Role.ADMIN
+        if (nbHumanPlayers >= MAX_PLAYERS_PER_GAME && !isAdmin) {
           client.leave(CloseCodes.ROOM_FULL)
           return
         }
 
-        if (u) {
-          if (
-            this.state.minRank != null &&
-            u.elo < EloRankThreshold[this.state.minRank]
-          ) {
-            client.leave(CloseCodes.USER_RANK_TOO_LOW)
-            return
-          }
+        if (
+          this.state.minRank != null &&
+          u.elo < EloRankThreshold[this.state.minRank] &&
+          !isAdmin
+        ) {
+          client.leave(CloseCodes.USER_RANK_TOO_LOW)
+          return
+        }
 
-          if (
-            this.state.maxRank != null &&
-            u.elo &&
-            EloRankThreshold[getRank(u.elo)] >
-              EloRankThreshold[this.state.maxRank]
-          ) {
-            client.leave(CloseCodes.USER_RANK_TOO_HIGH)
-            return
-          }
+        if (
+          this.state.maxRank != null &&
+          u.elo &&
+          EloRankThreshold[getRank(u.elo)] >
+            EloRankThreshold[this.state.maxRank] &&
+          !isAdmin
+        ) {
+          client.leave(CloseCodes.USER_RANK_TOO_HIGH)
+          return
+        }
 
-          this.state.users.set(
-            client.auth.uid,
-            new GameUser(
-              u.uid,
-              u.displayName,
-              u.elo,
-              u.avatar,
-              false,
-              false,
-              u.title,
-              u.role,
-              auth.email === undefined && auth.photoURL === undefined
-            )
+        this.state.users.set(
+          client.auth.uid,
+          new GameUser(
+            u.uid,
+            u.displayName,
+            u.elo,
+            u.avatar,
+            false,
+            false,
+            u.title,
+            u.role,
+            auth.email === undefined && auth.photoURL === undefined
           )
-          this.room.updatePlayersInfo()
+        )
+        this.room.updatePlayersInfo()
 
-          if (u.uid == this.state.ownerId) {
-            // logger.debug(user.displayName);
-            this.state.ownerName = u.displayName
-            this.room.setMetadata({
-              ownerName: this.state.ownerName
-            })
-          }
-
-          if (this.state.gameMode !== GameMode.CUSTOM_LOBBY) {
-            this.clock.setTimeout(() => {
-              if (
-                this.state.users.has(u.uid) &&
-                !this.state.users.get(u.uid)!.ready
-              ) {
-                this.state.users.delete(u.uid)
-                client.leave(CloseCodes.USER_KICKED) // kick clients that can't auto-ready in time. Still investigating why this happens for some people
-              }
-            }, 10000)
-          }
-
-          this.state.addMessage({
-            authorId: "server",
-            payload: `${u.displayName} joined.`,
-            avatar: u.avatar
+        if (u.uid == this.state.ownerId) {
+          // logger.debug(user.displayName);
+          this.state.ownerName = u.displayName
+          this.room.setMetadata({
+            ownerName: this.state.ownerName
           })
         }
+
+        if (this.state.gameMode !== GameMode.CUSTOM_LOBBY) {
+          this.clock.setTimeout(() => {
+            if (
+              this.state.users.has(u.uid) &&
+              !this.state.users.get(u.uid)!.ready
+            ) {
+              this.state.users.delete(u.uid)
+              client.leave(CloseCodes.USER_KICKED) // kick clients that can't auto-ready in time. Still investigating why this happens for some people
+            }
+          }, 10000)
+        }
+
+        this.state.addMessage({
+          authorId: "server",
+          payload: `${u.displayName} joined.`,
+          avatar: u.avatar
+        })
       }
 
       while (this.state.users.size > MAX_PLAYERS_PER_GAME) {
@@ -264,7 +261,7 @@ export class OnGameStartRequestCommand extends Command<
         this.state.gameStartedAt = new Date().toISOString()
         this.room.lock()
         const gameRoom = await matchMaker.createRoom("game", {
-          users: this.state.users.toJSON(),
+          users: Object.fromEntries(entries(this.state.users)),
           name: this.state.name,
           ownerName: this.state.ownerName,
           preparationId: this.room.roomId,

@@ -34,16 +34,6 @@ export default function WikiFaq() {
         <p>{t("faq.level_answer")}</p>
       </details>
       <details className="my-box">
-        <summary>{t("faq.sprite")}</summary>
-        <p>
-          {t("faq.sprite_answer1")}
-          <a href="https://github.com/PMDCollab/SpriteCollab">
-            https://github.com/PMDCollab/SpriteCollab
-          </a>
-          . {t("faq.sprite_answer2")}
-        </p>
-      </details>
-      <details className="my-box">
         <summary>{t("faq.mythical")}</summary>
         <p>{t("faq.mythical_answer")}</p>
       </details>
@@ -76,10 +66,6 @@ export default function WikiFaq() {
         <p>{t("faq.damage_answer")}</p>
       </details>
       <details className="my-box">
-        <summary>{t("faq.defense")}</summary>
-        <p>{t("faq.defense_answer")}</p>
-      </details>
-      <details className="my-box">
         <summary>{t("faq.shiny")}</summary>
         <p>{t("faq.shiny_answer")}</p>
       </details>
@@ -87,7 +73,7 @@ export default function WikiFaq() {
         <summary>{t("faq.support")}</summary>
         <p>
           {t("faq.support_answer")}
-          &nbsp;<a href="https://en.tipeee.com/pokemon-auto-chess">Tipeee</a>.
+          &nbsp;<a href="https://en.tipeee.com/keldaan">Tipee</a>.
         </p>
       </details>
       <details className="my-box">
@@ -107,6 +93,6 @@ export default function WikiFaq() {
           !
         </p>
       </details>
-    </div >
+    </div>
   )
 }

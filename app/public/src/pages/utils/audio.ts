@@ -1,7 +1,7 @@
 import { type Scene } from "phaser"
 import { DungeonMusic } from "../../../../types/enum/Dungeon"
 import { logger } from "../../../../utils/logger"
-import { preferences } from "../../preferences"
+import { preference, subscribeToPreferences } from "../../preferences"
 
 export const SOUNDS = {
   BUTTON_CLICK: "buttonclick.ogg",
@@ -63,23 +63,37 @@ export function playSound(key: Soundkey, volume = 1) {
   const sound = AUDIO_ELEMENTS[key]
   if (sound) {
     sound.currentTime = 0
-    sound.volume = (volume * preferences.sfxVolume) / 100
+    sound.volume = (volume * preference("sfxVolume")) / 100
     sound.play()
   }
 }
 
 type SceneWithMusic = Phaser.Scene & { music?: Phaser.Sound.WebAudioSound }
 
-export function playMusic(scene: SceneWithMusic, name: string) {
+export function playMusic(scene: SceneWithMusic, name: string, seek?: number) {
   if (scene == null || scene.music?.key === "music_" + name) return
   if (scene.music) scene.music.destroy()
-  scene.music = scene.sound.add("music_" + name, {
-    loop: true
-  }) as Phaser.Sound.WebAudioSound
-  scene.sound.pauseOnBlur = !preferences.playInBackground;
-  const musicVolume = preferences.musicVolume / 100
+
   try {
-    scene.music.play({ volume: musicVolume, loop: true })
+    const music = scene.sound.add("music_" + name, {
+      loop: true
+    }) as Phaser.Sound.WebAudioSound
+
+    const unsubscribeToPreferences = subscribeToPreferences(
+      ({ musicVolume }) => {
+        music.setVolume(musicVolume / 100)
+      }
+    )
+    music.on("stop", unsubscribeToPreferences)
+
+    scene.music = music
+    scene.sound.pauseOnBlur = !preference("playInBackground")
+
+    scene.music.play({
+      volume: preference("musicVolume") / 100,
+      loop: true,
+      seek
+    })
   } catch (err) {
     logger.error("can't play music", err)
   }

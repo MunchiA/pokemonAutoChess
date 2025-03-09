@@ -5,6 +5,7 @@ import {
   ArtificialItems,
   ItemComponents,
   Berries,
+  Dishes,
   Item,
   ItemRecipe,
   SpecialItems,
@@ -17,8 +18,11 @@ import { Synergy } from "../../../../../types/enum/Synergy"
 import { ItemDetailTooltip } from "../../../game/components/item-detail"
 import { addIconsToDescription } from "../../utils/descriptions"
 import SynergyIcon from "../icons/synergy-icon"
+import { cc } from "../../utils/jsx"
+import { usePreference } from "../../../preferences"
 
 export default function WikiItems() {
+  const [antialiasing] = usePreference("antialiasing")
   const [itemHovered, setItemHovered] = useState<Item>()
   const { t } = useTranslation()
   return (
@@ -43,7 +47,7 @@ export default function WikiItems() {
                 return (
                   <th
                     key={i}
-                    data-tooltip-id="detail-item"
+                    data-tooltip-id="item-detail"
                     onMouseOver={() => setItemHovered(i)}
                   >
                     <img
@@ -58,7 +62,7 @@ export default function WikiItems() {
               return (
                 <tr key={"tr-" + i}>
                   <td
-                    data-tooltip-id="detail-item"
+                    data-tooltip-id="item-detail"
                     onMouseOver={() => setItemHovered(i)}
                   >
                     <img
@@ -81,7 +85,7 @@ export default function WikiItems() {
                     return (
                       <td
                         key={"td-" + i + "-" + j}
-                        data-tooltip-id="detail-item"
+                        data-tooltip-id="item-detail"
                         onMouseOver={() => setItemHovered(tier2Item)}
                       >
                         <img
@@ -104,7 +108,7 @@ export default function WikiItems() {
           {ShinyItems.map((i) => (
             <li
               key={i}
-              data-tooltip-id="detail-item"
+              data-tooltip-id="item-detail"
               onMouseOver={() => setItemHovered(i)}
             >
               <img src={"assets/item/" + i + ".png"} className="item"></img>
@@ -118,7 +122,7 @@ export default function WikiItems() {
           {SpecialItems.map((i) => (
             <li
               key={i}
-              data-tooltip-id="detail-item"
+              data-tooltip-id="item-detail"
               onMouseOver={() => setItemHovered(i)}
             >
               <img src={"assets/item/" + i + ".png"} className="item"></img>
@@ -126,6 +130,7 @@ export default function WikiItems() {
           ))}
         </ul>
       </article>
+
       <article className="berries">
         <h2>
           <SynergyIcon type={Synergy.GRASS} /> {t("berries")}
@@ -135,19 +140,40 @@ export default function WikiItems() {
           {Berries.map((i) => (
             <li
               key={i}
-              data-tooltip-id="detail-item"
+              data-tooltip-id="item-detail"
               onMouseOver={() => setItemHovered(i)}
             >
               <img src={"assets/item/" + i + ".png"} className="item"></img>
               <br />
               <img
                 src={"assets/environment/berry_trees/" + i + "_6.png"}
-                className="tree"
+                className={cc("tree", {
+                  pixelated: !antialiasing
+                })}
               ></img>
             </li>
           ))}
         </ul>
       </article>
+
+      <article className="dishes">
+        <h2>
+          <SynergyIcon type={Synergy.GOURMET} /> {t("dishes")}
+        </h2>
+        <p>{addIconsToDescription(t("dishes_description"))}</p>
+        <ul>
+          {Dishes.map((i) => (
+            <li
+              key={i}
+              data-tooltip-id="item-detail"
+              onMouseOver={() => setItemHovered(i)}
+            >
+              <img src={"assets/item/" + i + ".png"} className="item"></img>
+            </li>
+          ))}
+        </ul>
+      </article>
+
       <article className="artificial">
         <h2>
           <SynergyIcon type={Synergy.ARTIFICIAL} /> {t("artificial_items")}
@@ -157,7 +183,7 @@ export default function WikiItems() {
           {ArtificialItems.map((i) => (
             <li
               key={i}
-              data-tooltip-id="detail-item"
+              data-tooltip-id="item-detail"
               onMouseOver={() => setItemHovered(i)}
             >
               <img src={"assets/item/" + i + ".png"} className="item"></img>
@@ -175,7 +201,7 @@ export default function WikiItems() {
           {WeatherRocks.map((i) => (
             <li
               key={i}
-              data-tooltip-id="detail-item"
+              data-tooltip-id="item-detail"
               onMouseOver={() => setItemHovered(i)}
             >
               <img src={"assets/item/" + i + ".png"} className="item"></img>
@@ -193,7 +219,7 @@ export default function WikiItems() {
           {TMs.map((i) => (
             <li
               key={i}
-              data-tooltip-id="detail-item"
+              data-tooltip-id="item-detail"
               onMouseOver={() => setItemHovered(i)}
             >
               <img src={"assets/item/TM.png"} className="item"></img>
@@ -202,7 +228,7 @@ export default function WikiItems() {
           {HMs.map((i) => (
             <li
               key={i}
-              data-tooltip-id="detail-item"
+              data-tooltip-id="item-detail"
               onMouseOver={() => setItemHovered(i)}
             >
               <img src={"assets/item/HM.png"} className="item"></img>
@@ -213,7 +239,7 @@ export default function WikiItems() {
 
       {
         itemHovered && <Tooltip
-          id="detail-item"
+          id="item-detail"
           className="custom-theme-tooltip item-detail-tooltip"
         >
           <ItemDetailTooltip item={itemHovered} />

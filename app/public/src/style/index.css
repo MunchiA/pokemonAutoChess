@@ -15,6 +15,7 @@
   --sidebar-width: 60px;
   --border-thick: 4px solid black;
   --border-thin: 2px solid black;
+  --border-extra-thin: 1px solid black;
   --shadow-clickable: #2d334b 2px 2px 0px;
 }
 
@@ -184,7 +185,6 @@ p:last-child {
 .game-emote-bubble img {
   width: 80px;
   height: 80px;
-  image-rendering: pixelated;
 }
 
 .game-emote-bubble:after {
@@ -214,19 +214,25 @@ p:last-child {
   margin-top: -19px;
 }
 
-.game-pokemon-dialog {
+.game-dialog {
   color: white;
   font-size: 1rem;
   max-width: 300px;
 }
 
-.game-pokemon-dialog .game-pokemon-dialog-title {
+.game-dialog .game-dialog-title {
   background-color: #4f5160;
   text-transform: capitalize;
   padding: 0.25em 0.5em;
   margin: -0.25em -0.5em 4px -0.5em;
   border-radius: 8px 8px 0 0;
   box-shadow: 0 -1px 2px rgb(0 0 0 / 50%);
+}
+
+.game-dialog.town-encounter-description {
+  max-width: 600px;
+  width: 600px;
+  text-align: center;
 }
 
 .clickable {
@@ -277,11 +283,10 @@ p:last-child {
   border: 1px solid #000000;
   border-radius: 4px;
   box-shadow: 2px 2px 0 #00000060;
-  image-rendering: pixelated;
   position: relative;
 }
 
-.pokemon-portrait.additional::after {
+.pokemon-portrait.additional:not(.regional)::after {
   content: "";
   position: absolute;
   top: 2px;
@@ -318,4 +323,8 @@ p:last-child {
   color: black;
   text-shadow: 1px 1px 1px white, -1px 1px 1px white, 1px -1px 1px white, -1px
     -1px 1px white;
+}
+
+.pixelated {
+  image-rendering: pixelated;
 }

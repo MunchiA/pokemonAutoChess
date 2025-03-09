@@ -191,7 +191,10 @@ async function splitIndex(index: string) {
   const pathIndex = index.replace("-", "/")
   const shinyPad =
     pathIndex.length == 4 ? `${pathIndex}/0000/0001` : `${pathIndex}/0001`
-  const allPads = [pathIndex, shinyPad]
+  const conf =
+    AnimationConfig[mapName.get(index) as Pkm] ?? AnimationConfig[Pkm.DEFAULT]
+  const allPads = [pathIndex]
+  if (!conf.shinyUnavailable) allPads.push(shinyPad)
 
   for (let j = 0; j < allPads.length; j++) {
     const pad = allPads[j]
@@ -203,7 +206,7 @@ async function splitIndex(index: string) {
       const parser = new XMLParser()
       const xmlData = <IPMDCollab>parser.parse(xmlFile)
       let attackMetadata = xmlData.AnimData.Anims.Anim.find(
-        (m) => m.Name === AnimationConfig[mapName.get(index) as Pkm].attack
+        (m) => m.Name === conf.attack
       )
       if (attackMetadata) {
         if (attackMetadata && attackMetadata.CopyOf) {
@@ -230,46 +233,38 @@ async function splitIndex(index: string) {
       }
       for (let k = 0; k < Object.values(SpriteType).length; k++) {
         const anim = Object.values(SpriteType)[k]
-        const conf = mapName.get(index)
 
-        const actions: AnimationType[] = [
+        const actions: Set<AnimationType> = new Set([
           AnimationType.Idle,
-          AnimationType.Walk,
-          AnimationType.Sleep,
-          AnimationType.Hop,
-          AnimationType.Hurt
-        ]
+          AnimationType.Walk
+        ])
 
-        if (conf && AnimationConfig[conf]) {
-          if (!actions.includes(AnimationConfig[conf as Pkm].attack)) {
-            actions.push(AnimationConfig[conf as Pkm].attack)
-          }
-          if (!actions.includes(AnimationConfig[conf as Pkm].ability)) {
-            actions.push(AnimationConfig[conf as Pkm].ability)
-          }
-          if (!actions.includes(AnimationConfig[conf as Pkm].emote)) {
-            actions.push(AnimationConfig[conf as Pkm].emote)
-          }
-        } else {
-          actions.push(AnimationType.Attack)
+        if (!conf) {
+          logger.warn(
+            "Animation config not found for index",
+            index,
+            mapName.get(index)
+          )
+          continue
         }
 
-        for (let l = 0; l < actions.length; l++) {
-          const action = actions[l]
+        actions.add(conf.sleep ?? AnimationType.Sleep)
+        actions.add(conf.eat ?? AnimationType.Eat)
+        actions.add(conf.hop ?? AnimationType.Hop)
+        actions.add(conf.hurt ?? AnimationType.Hurt)
+        actions.add(conf.attack ?? AnimationType.Attack)
+        actions.add(conf.ability ?? AnimationType.SpAttack)
+        actions.add(conf.emote ?? AnimationType.Pose)
+
+        for (const action of actions) {
+          let metadata = xmlData.AnimData.Anims.Anim.find(
+            (m) => m.Name == action
+          )
+          const imgPath = expandHomeDir(
+            `${path}/sprite/${pad}/${metadata?.CopyOf || action}-${anim}.png`
+          )
           try {
-            let metadata = xmlData.AnimData.Anims.Anim.find(
-              (m) => m.Name == action
-            )
-            const img =
-              metadata && metadata.CopyOf
-                ? await Jimp.read(
-                    expandHomeDir(
-                      `${path}/sprite/${pad}/${metadata.CopyOf}-${anim}.png`
-                    )
-                  )
-                : await Jimp.read(
-                    expandHomeDir(`${path}/sprite/${pad}/${action}-${anim}.png`)
-                  )
+            const img = await Jimp.read(imgPath)
 
             if (metadata?.CopyOf) {
               metadata = xmlData.AnimData.Anims.Anim.find(
@@ -339,7 +334,7 @@ async function splitIndex(index: string) {
               }
             }
           } catch (error) {
-            logger.error(error)
+            logger.error(`Error parsing animation ${imgPath}`, error)
             logger.warn(
               "action",
               action,

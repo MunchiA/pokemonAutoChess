@@ -6,6 +6,7 @@ import { pickRandomIn } from "../../../../utils/random"
 import { getGameContainer } from "../../pages/game"
 import GameScene from "../scenes/game-scene"
 import { addWanderingPokemon } from "./pokemon"
+import { DEPTH } from "../depths"
 
 const SHARDS_PER_ENCOUNTER = 50
 
@@ -16,17 +17,13 @@ export default class UnownManager {
     this.scene = scene
   }
 
-  addWanderingUnown() {
-    addWanderingPokemon(
-      this.scene,
-      pickRandomIn(Unowns),
-      (unown, pointer, tween) => {
-        getGameContainer().room.send(Transfer.UNOWN_WANDERING, unown.index)
-        this.displayShardGain([pointer.x, pointer.y], unown.index)
-        unown.destroy()
-        tween.destroy()
-      }
-    )
+  addWanderingUnown(pkm: Pkm, id: string) {
+    addWanderingPokemon(this.scene, id, pkm, (unown, id, pointer, tween) => {
+      getGameContainer().room.send(Transfer.UNOWN_WANDERING, { id })
+      this.displayShardGain([pointer.x, pointer.y], unown.index)
+      unown.destroy()
+      tween.destroy()
+    })
   }
 
   displayShardGain(coordinates: number[], index: string) {
@@ -53,8 +50,8 @@ export default class UnownManager {
         textStyle
       )
     )
-    image.setDepth(9)
-    text.setDepth(10)
+    image.setDepth(DEPTH.TEXT_MINOR)
+    text.setDepth(DEPTH.TEXT)
 
     const container = this.scene.add.existing(
       new GameObjects.Container(
@@ -144,7 +141,7 @@ export const UNOWNS_PER_ABILITY = new Map([
   ],
   [
     Ability.HIDDEN_POWER_O,
-    [Pkm.UNOWN_O, Pkm.UNOWN_N, Pkm.UNOWN_I, Pkm.UNOWN_X]
+    [Pkm.UNOWN_O, Pkm.UNOWN_V, Pkm.UNOWN_E, Pkm.UNOWN_N]
   ],
   [
     Ability.HIDDEN_POWER_P,

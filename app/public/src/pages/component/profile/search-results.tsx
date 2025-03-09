@@ -2,7 +2,8 @@ import React from "react"
 import { useTranslation } from "react-i18next"
 import { useAppDispatch, useAppSelector } from "../../../hooks"
 import { searchById } from "../../../stores/NetworkStore"
-import { getAvatarSrc } from "../../../../../utils/avatar"
+import { cc } from "../../utils/jsx"
+import PokemonPortrait from "../pokemon-portrait"
 
 export default function SearchResults() {
   const { t } = useTranslation()
@@ -14,16 +15,13 @@ export default function SearchResults() {
       <ul className="search-suggestions">
         {suggestions.map((suggestion) => (
           <li
-            className="player my-box clickable"
+            className={cc("player my-box clickable", { banned: suggestion.banned === true })}
             key={suggestion.id}
             onClick={(e) => {
               dispatch(searchById(suggestion.id))
             }}
           >
-            <img
-              src={getAvatarSrc(suggestion.avatar)}
-              className="pokemon-portrait"
-            />
+            <PokemonPortrait avatar={suggestion.avatar} />
             <span>{suggestion.name}</span>
           </li>
         ))}

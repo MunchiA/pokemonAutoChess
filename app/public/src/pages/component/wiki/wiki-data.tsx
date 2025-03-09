@@ -1,9 +1,10 @@
 import React from "react"
 import { useTranslation } from "react-i18next"
-import { ARCEUS_RATE, BoosterRarityProbability, DITTO_RATE, ExpPlace, FishRarityProbability, KECLEON_RATE, PoolSize, RarityColor, RarityProbabilityPerLevel } from "../../../../../types/Config"
+import { ARCEUS_RATE, BoosterRarityProbability, DITTO_RATE, ExpPlace, ExpTable, FishRarityProbability, KECLEON_RATE, PoolSize, RarityColor, RarityProbabilityPerLevel } from "../../../../../types/Config"
 import { Rarity } from "../../../../../types/enum/Game"
 import { getRankLabel } from "../../../../../types/strings/Strings"
 import { FishingRods } from "../../../../../types/enum/Item"
+import { addIconsToDescription } from "../../utils/descriptions"
 
 export default function WikiData() {
   const { t } = useTranslation()
@@ -22,12 +23,14 @@ export default function WikiData() {
         <thead>
           <tr>
             <th>{t("level")}</th>
+            <th>{t("xp")}</th>
             {rarities.map((r, i) => <th style={{ color: RarityColor[rarities[i]] }}>{t("rarity." + r)}</th>)}
           </tr>
         </thead>
         <tbody>
           {Object.entries(RarityProbabilityPerLevel).map(([level, odds], i) => <tr>
             <td>{level}</td>
+            <td>{level == '9' ? '' : ExpTable[level]}</td>
             {Object.entries(odds).map(([rarity, probability], i) => (
               <td key={rarity} style={{ color: RarityColor[rarities[i]] }}>{percentage.format(probability)}</td>
             ))}
@@ -110,6 +113,9 @@ export default function WikiData() {
           </tr>)}
         </tbody>
       </table>
+
+      <h2>{t("wiki.defense_calculation")}</h2>
+      <p>{addIconsToDescription(t("wiki.defense_calculation_description"))}</p>
 
       <h2>{t("wiki.round_damage_calculation")}</h2>
       <p>{t("wiki.round_damage_calculation_description")}</p>

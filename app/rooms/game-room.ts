@@ -8,12 +8,11 @@ import { MiniGame } from "../core/matter/mini-game"
 import { IGameUser } from "../models/colyseus-models/game-user"
 import Player from "../models/colyseus-models/player"
 import { Pokemon } from "../models/colyseus-models/pokemon"
-import BannedUser from "../models/mongo-models/banned-user"
 import { BotV2 } from "../models/mongo-models/bot-v2"
 import DetailledStatistic from "../models/mongo-models/detailled-statistic-v2"
 import History from "../models/mongo-models/history"
 import UserMetadata, {
-  IPokemonConfig
+  IPokemonCollectionItem
 } from "../models/mongo-models/user-metadata"
 import PokemonFactory from "../models/pokemon-factory"
 import {
@@ -22,8 +21,6 @@ import {
 } from "../models/precomputed/precomputed-pokemon-data"
 import { PRECOMPUTED_POKEMONS_PER_RARITY } from "../models/precomputed/precomputed-rarity"
 import { getAdditionalsTier1 } from "../models/shop"
-import { Passive } from "../types/enum/Passive"
-import { getAvatarString } from "../utils/avatar"
 import {
   Emotion,
   IDragDropCombineMessage,
@@ -43,23 +40,26 @@ import {
   AdditionalPicksStages,
   EloRank,
   ExpPlace,
-  LegendaryShop,
+  LegendaryPool,
   MAX_SIMULATION_DELTA_TIME,
-  PortalCarouselStages,
   MinStageLevelForGameToCount,
-  UniqueShop
+  PortalCarouselStages,
+  UniquePool
 } from "../types/Config"
 import { GameMode, PokemonActionState } from "../types/enum/Game"
 import { Item } from "../types/enum/Item"
+import { Passive } from "../types/enum/Passive"
 import {
   Pkm,
   PkmDuos,
+  PkmIndex,
   PkmProposition,
   PkmRegionalVariants
 } from "../types/enum/Pokemon"
 import { SpecialGameRule } from "../types/enum/SpecialGameRule"
 import { Synergy } from "../types/enum/Synergy"
 import { removeInArray } from "../utils/array"
+import { getAvatarString } from "../utils/avatar"
 import {
   getFirstAvailablePositionInBench,
   getFreeSpaceOnBench
@@ -85,6 +85,7 @@ import {
   OnUpdateCommand
 } from "./commands/game-commands"
 import GameState from "./states/game-state"
+import { CloseCodes } from "../types/enum/CloseCodes"
 
 export default class GameRoom extends Room<GameState> {
   dispatcher: Dispatcher<this>
@@ -116,6 +117,13 @@ export default class GameRoom extends Room<GameState> {
     bracketId: string | null
   }) {
     logger.info("Create Game ", this.roomId)
+
+    this.presence.subscribe("room-deleted", (roomId) => {
+      if (this.roomId === roomId) {
+        this.disconnect(CloseCodes.ROOM_DELETED)
+      }
+    })
+
     this.setMetadata(<IGameMetadata>{
       name: options.name,
       ownerName: options.ownerName,
@@ -188,14 +196,13 @@ export default class GameRoom extends Room<GameState> {
             user.avatar,
             true,
             this.state.players.size + 1,
-            new Map<string, IPokemonConfig>(),
+            new Map<string, IPokemonCollectionItem>(),
             "",
             Role.BOT,
             this.state
           )
           this.state.players.set(user.uid, player)
           this.state.botManager.addBot(player)
-          //this.state.shop.assignShop(player)
         } else {
           const user = await UserMetadata.findOne({ uid: id })
           if (user) {
@@ -438,39 +445,46 @@ export default class GameRoom extends Room<GameState> {
       }
     })
 
-    this.onMessage(Transfer.UNOWN_WANDERING, async (client, unownIndex) => {
-      try {
-        if (client.auth) {
-          const DUST_PER_ENCOUNTER = 50
-          const u = await UserMetadata.findOne({ uid: client.auth.uid })
-          if (u) {
-            const c = u.pokemonCollection.get(unownIndex)
-            if (c) {
-              c.dust += DUST_PER_ENCOUNTER
-            } else {
-              u.pokemonCollection.set(unownIndex, {
-                id: unownIndex,
-                emotions: [],
-                shinyEmotions: [],
-                dust: DUST_PER_ENCOUNTER,
-                selectedEmotion: Emotion.NORMAL,
-                selectedShiny: false
-              })
+    this.onMessage(
+      Transfer.UNOWN_WANDERING,
+      async (client, { id: unownId }) => {
+        try {
+          const pkm = this.state.wanderers.get(unownId)
+          if (!pkm) return
+          const unownIndex = PkmIndex[pkm]
+          this.state.wanderers.delete(unownId)
+          if (client.auth) {
+            const DUST_PER_ENCOUNTER = 50
+            const u = await UserMetadata.findOne({ uid: client.auth.uid })
+            if (u) {
+              const c = u.pokemonCollection.get(unownIndex)
+              if (c) {
+                c.dust += DUST_PER_ENCOUNTER
+              } else {
+                u.pokemonCollection.set(unownIndex, {
+                  id: unownIndex,
+                  emotions: [],
+                  shinyEmotions: [],
+                  dust: DUST_PER_ENCOUNTER,
+                  selectedEmotion: Emotion.NORMAL,
+                  selectedShiny: false
+                })
+              }
+              u.save()
             }
-            u.save()
           }
+        } catch (error) {
+          logger.error(error)
         }
-      } catch (error) {
-        logger.error(error)
       }
-    })
+    )
 
-    this.onMessage(Transfer.POKEMON_WANDERING, async (client, pkm) => {
+    this.onMessage(Transfer.POKEMON_WANDERING, async (client, msg) => {
       if (client.auth) {
         try {
           this.dispatcher.dispatch(new OnPokemonCatchCommand(), {
             playerId: client.auth.uid,
-            pkm
+            id: msg.id
           })
         } catch (e) {
           logger.error("catch wandering error", e)
@@ -534,6 +548,7 @@ export default class GameRoom extends Room<GameState> {
         }
       }
     })
+    this.miniGame.initialize(this.state, this)
   }
 
   async onAuth(client: Client, options, request) {
@@ -556,13 +571,10 @@ export default class GameRoom extends Room<GameState> {
   }
 
   async onJoin(client: Client) {
-    const isBanned = await BannedUser.findOne({ uid: client.auth.uid })
-
-    if (isBanned) {
+    const userProfile = await UserMetadata.findOne({ uid: client.auth.uid })
+    if (userProfile?.banned) {
       throw "Account banned"
     }
-
-    const userProfile = await UserMetadata.findOne({ uid: client.auth.uid })
     client.send(Transfer.USER_PROFILE, userProfile)
     this.dispatcher.dispatch(new OnJoinCommand(), { client })
   }
@@ -576,8 +588,8 @@ export default class GameRoom extends Room<GameState> {
         throw new Error("consented leave")
       }
 
-      // allow disconnected client to reconnect into this room until 3 minutes
-      await this.allowReconnection(client, 180)
+      // allow disconnected client to reconnect into this room until 5 minutes
+      await this.allowReconnection(client, 300)
       const userProfile = await UserMetadata.findOne({ uid: client.auth.uid })
       client.send(Transfer.USER_PROFILE, userProfile)
       this.dispatcher.dispatch(new OnJoinCommand(), { client })
@@ -587,7 +599,14 @@ export default class GameRoom extends Room<GameState> {
         const player = this.state.players.get(client.auth.uid)
         const hasLeftGameBeforeTheEnd =
           player && player.life > 0 && !this.state.gameFinished
-        if (hasLeftGameBeforeTheEnd) {
+        const otherHumans = values(this.state.players).filter(
+          (p) => !p.isBot && p.id !== client.auth.uid
+        )
+        if (
+          hasLeftGameBeforeTheEnd &&
+          otherHumans.length >= 1 &&
+          player.role !== Role.ADMIN
+        ) {
           /* if a user leaves a game before the end, 
           they cannot join another in the next 5 minutes */
           this.presence.hset(
@@ -686,7 +705,8 @@ export default class GameRoom extends Room<GameState> {
                 this.transformToSimplePlayer(botPlayer),
                 botPlayer.rank,
                 bot.elo,
-                players
+                players,
+                this.state.gameMode
               )
               bot.save()
             }
@@ -801,7 +821,8 @@ export default class GameRoom extends Room<GameState> {
           this.transformToSimplePlayer(player),
           rank,
           usr.elo,
-          humans.map((p) => this.transformToSimplePlayer(p))
+          humans.map((p) => this.transformToSimplePlayer(p)),
+          this.state.gameMode
         )
         if (elo) {
           if (elo >= 1100) {
@@ -886,7 +907,7 @@ export default class GameRoom extends Room<GameState> {
     })
 
     player.board.forEach((pokemon: IPokemon) => {
-      if (pokemon.positionY != 0) {
+      if (pokemon.positionY != 0 && pokemon.passive !== Passive.INANIMATE) {
         const avatar = getAvatarString(
           pokemon.index,
           pokemon.shiny,
@@ -958,7 +979,7 @@ export default class GameRoom extends Room<GameState> {
 
     player.board.forEach((pokemon) => {
       if (
-        pokemon.evolution !== Pkm.DEFAULT &&
+        pokemon.hasEvolution &&
         pokemon.evolutionRule instanceof CountEvolutionRule
       ) {
         const pokemonEvolved = pokemon.evolutionRule.tryEvolve(
@@ -1023,13 +1044,13 @@ export default class GameRoom extends Room<GameState> {
     if (!player || player.pokemonsProposition.length === 0) return
     if (this.state.additionalPokemons.includes(pkm as Pkm)) return // already picked, probably a double click
     if (
-      UniqueShop.includes(pkm) &&
-      this.state.stageLevel !== PortalCarouselStages[0]
+      UniquePool.includes(pkm) &&
+      this.state.stageLevel !== PortalCarouselStages[1]
     )
       return // should not be pickable at this stage
     if (
-      LegendaryShop.includes(pkm) &&
-      this.state.stageLevel !== PortalCarouselStages[1]
+      LegendaryPool.includes(pkm) &&
+      this.state.stageLevel !== PortalCarouselStages[2]
     )
       return // should not be pickable at this stage
 
@@ -1061,11 +1082,9 @@ export default class GameRoom extends Room<GameState> {
       // update regional pokemons in case some regional variants of add picks are now available
       this.state.players.forEach((p) => p.updateRegionalPool(this.state, false))
 
-      if (
-        player.itemsProposition.length > 0 &&
-        player.itemsProposition[selectedIndex] != null
-      ) {
-        player.items.push(player.itemsProposition[selectedIndex])
+      const selectedItem = player.itemsProposition[selectedIndex]
+      if (player.itemsProposition.length > 0 && selectedItem != null) {
+        player.items.push(selectedItem)
         player.itemsProposition.clear()
       }
     }

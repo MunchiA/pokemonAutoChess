@@ -1,10 +1,10 @@
 import PokemonFactory from "../../models/pokemon-factory"
 import { getPokemonData } from "../../models/precomputed/precomputed-pokemon-data"
 import { PRECOMPUTED_POKEMONS_PER_TYPE_AND_CATEGORY } from "../../models/precomputed/precomputed-types-and-categories"
-import { Transfer } from "../../types"
+import { IPokemon, Transfer } from "../../types"
 import { Ability } from "../../types/enum/Ability"
 import { AttackType, Rarity } from "../../types/enum/Game"
-import { ItemComponents, Berries, Item } from "../../types/enum/Item"
+import { ItemComponents, Berries, Item, Dishes } from "../../types/enum/Item"
 import { Pkm, getUnownsPoolPerStage } from "../../types/enum/Pokemon"
 import { Synergy } from "../../types/enum/Synergy"
 import { pickNRandomIn, pickRandomIn } from "../../utils/random"
@@ -14,7 +14,7 @@ import PokemonState from "../pokemon-state"
 import { AbilityStrategies } from "./abilities"
 import { AbilityStrategy } from "./ability-strategy"
 import { getFirstAvailablePositionInBench } from "../../utils/board"
-import { createRandomEgg } from "../../models/egg-factory"
+import { giveRandomEgg } from "../eggs"
 
 export class HiddenPowerStrategy extends AbilityStrategy {
   copyable = false
@@ -130,16 +130,8 @@ export class HiddenPowerEStrategy extends HiddenPowerStrategy {
     crit: boolean
   ) {
     super.process(unown, state, board, target, crit)
-    const egg = createRandomEgg(false)
-    const player = unown.player
-    if (player && !unown.isGhostOpponent) {
-      const x = getFirstAvailablePositionInBench(player.board)
-      if (x !== undefined) {
-        egg.positionX = x
-        egg.positionY = 0
-        egg.evolutionRule.evolutionTimer = 1
-        player.board.set(egg.id, egg)
-      }
+    if (!unown.isGhostOpponent && unown.player) {
+      giveRandomEgg(unown.player, false, 1)
     }
   }
 }
@@ -321,7 +313,7 @@ export class HiddenPowerNStrategy extends HiddenPowerStrategy {
         if (pokemon && unown.team === pokemon.team) {
           const target = board.getValue(pokemon.targetX, pokemon.targetY)
           if (target) {
-            pokemon.addShield(50, unown, 0, false)
+            pokemon.addShield(50, unown, 1, false)
             AbilityStrategies[Ability.EXPLOSION].process(
               pokemon,
               pokemon.state,
@@ -354,11 +346,11 @@ export class HiddenPowerOStrategy extends HiddenPowerStrategy {
     crit: boolean
   ) {
     super.process(pokemon, state, board, target, crit)
-    board.forEach((x: number, y: number, value: PokemonEntity | undefined) => {
-      if (value && pokemon.team === value.team) {
-        value.addItem(Item.ORAN_BERRY)
-      }
-    })
+    if (pokemon.player) {
+      pokemon.player.board.forEach((p: IPokemon) => {
+        p.meal = pickRandomIn(Dishes as unknown as Item[])
+      })
+    }
   }
 }
 
@@ -494,7 +486,7 @@ export class HiddenPowerVStrategy extends HiddenPowerStrategy {
     super.process(unown, state, board, target, crit)
     board.forEach((x: number, y: number, enemy: PokemonEntity | undefined) => {
       if (enemy && unown.team !== enemy.team) {
-        AbilityStrategies[Ability.THUNDER].process(
+        AbilityStrategies[Ability.THUNDER_SHOCK].process(
           unown,
           unown.state,
           board,
@@ -503,7 +495,7 @@ export class HiddenPowerVStrategy extends HiddenPowerStrategy {
         )
         unown.simulation.room.broadcast(Transfer.ABILITY, {
           id: unown.simulation.id,
-          skill: Ability.THUNDER,
+          skill: Ability.THUNDER_SHOCK,
           positionX: unown.positionX,
           positionY: unown.positionY,
           targetX: enemy.positionX,
@@ -528,14 +520,7 @@ export class HiddenPowerWStrategy extends HiddenPowerStrategy {
     if (player && !unown.isGhostOpponent) {
       const x = getFirstAvailablePositionInBench(player.board)
       if (x !== undefined) {
-        const synergiesSortedByLevel = Array.from(player.synergies).sort(
-          ([s1, v1], [s2, v2]) => v2 - v1
-        )
-        const topSynergyCount = synergiesSortedByLevel[0][1]
-        const topSynergies = synergiesSortedByLevel.filter(
-          ([s, v]) => v >= topSynergyCount
-        )
-        const topSynergy = pickRandomIn(topSynergies)[0]
+        const topSynergy = pickRandomIn(player.synergies.getTopSynergies())
         const candidates = (
           [
             ...PRECOMPUTED_POKEMONS_PER_TYPE_AND_CATEGORY[topSynergy].pokemons,

@@ -6,11 +6,6 @@
   max-width: 320px;
   gap: 5px;
   grid-template-columns: 88px 1fr auto;
-  grid-template-areas:
-    "portrait entry types"
-    "stats stats stats"
-    "passive passive passive"
-    "ult ult ult";
 }
 
 .react-tooltip.game-pokemon-detail-tooltip,
@@ -27,7 +22,6 @@
   flex-direction: column;
   align-items: start;
   justify-content: start;
-  grid-area: entry;
 }
 
 .game-pokemon-detail-entry-name {
@@ -44,11 +38,9 @@
 .game-pokemon-detail-portrait {
   width: 80px;
   height: 80px;
-  grid-area: portrait;
   border-style: solid;
   border-width: 4px;
   border-radius: 8px;
-  image-rendering: pixelated;
   box-sizing: content-box;
 }
 
@@ -59,7 +51,6 @@
   top: 23px;
   left: 7px;
   border-radius: 50%;
-  image-rendering: pixelated;
   filter: grayscale(1) contrast(0.2) brightness(1.8);
 }
 
@@ -69,13 +60,14 @@
 }
 
 .game-pokemon-detail-stats {
-  grid-area: stats;
+  grid-column: span 3;
   display: grid;
   grid-template: 32px 32px / repeat(5, 1fr);
 }
 
-.in-shop .game-pokemon-detail-stats {
-  grid-template: 32px 32px / repeat(3, 1fr);
+.in-shop .game-pokemon-detail-stats,
+.in-board .game-pokemon-detail-stats {
+  grid-template: 32px 32px / repeat(4, 1fr);
 }
 
 .game-pokemon-detail-stats > div {
@@ -88,19 +80,57 @@
   height: 32px;
 }
 
-.game-pokemon-detail-stats img + p {
+.game-pokemon-detail-stats img + span {
   display: inline-block;
   vertical-align: middle;
   font-weight: 500;
   font-size: 90%;
 }
 
+.game-pokemon-detail-stat-range {
+  grid-row: span 2;
+  display: flex;
+  align-items: center;
+}
+
+.game-pokemon-detail-stats .game-pokemon-detail-stat-range img + span {
+  display: inline-block;
+  margin: 0.5em;
+  font-size: 120%;
+}
+
 .game-pokemon-detail-stats .negative {
   color: red;
 }
 
+.game-pokemon-detail-dish {
+  grid-column: span 3;
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  align-items: center;
+  background-color: #4f5160;
+  margin: 0 -5px -7px -5px;
+  padding: 0 2px 5px 2px;
+}
+
+.game-pokemon-detail-dish-name {
+  grid-column: span 2;
+  padding: 5px;
+  display: flex;
+  justify-content: start;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 1em;
+  font-style: italic;
+}
+
+.game-pokemon-detail-dish-icon {
+  width: 45px;
+  height: 45px;
+}
+
 .game-pokemon-detail-ult {
-  grid-area: ult;
+  grid-column: span 3;
 }
 
 .game-pokemon-detail-ult .ability-name {
@@ -120,7 +150,7 @@
 }
 
 .game-pokemon-detail-passive {
-  grid-area: passive;
+  grid-column: span 3;
   font-style: italic;
   background-color: #4f5160;
   padding: 0.25em 5px;

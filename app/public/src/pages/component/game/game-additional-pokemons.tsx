@@ -1,13 +1,15 @@
 import React from "react"
 import { useTranslation } from "react-i18next"
 import { Tooltip } from "react-tooltip"
-import { IPokemonConfig } from "../../../../../models/mongo-models/user-metadata"
 import { getPokemonData } from "../../../../../models/precomputed/precomputed-pokemon-data"
 import { RarityColor } from "../../../../../types/Config"
 import { SpecialGameRule } from "../../../../../types/enum/SpecialGameRule"
-import { useAppSelector } from "../../../hooks"
+import { selectCurrentPlayer, useAppSelector } from "../../../hooks"
 import { getPortraitSrc } from "../../../../../utils/avatar"
 import SynergyIcon from "../icons/synergy-icon"
+import { cc } from "../../utils/jsx"
+import { usePreferences } from "../../../preferences"
+import { getPkmWithCustom } from "../../../../../models/colyseus-models/pokemon-customs"
 
 export function GameAdditionalPokemonsIcon() {
   return (
@@ -30,15 +32,14 @@ export function GameAdditionalPokemonsIcon() {
 }
 
 export function GameAdditionalPokemons() {
+  const [{ antialiasing }] = usePreferences()
   const { t } = useTranslation()
 
   const specialGameRule = useAppSelector((state) => state.game.specialGameRule)
   const additionalPokemons = useAppSelector(
     (state) => state.game.additionalPokemons
   )
-  const pokemonCollection = useAppSelector(
-    (state) => state.game.pokemonCollection
-  )
+  const currentPlayer = useAppSelector(selectCurrentPlayer)
 
   if (specialGameRule === SpecialGameRule.EVERYONE_IS_HERE) {
     return (
@@ -61,21 +62,16 @@ export function GameAdditionalPokemons() {
           {additionalPokemons.map((p, index) => {
             const pokemon = getPokemonData(p)
             const rarityColor = RarityColor[pokemon.rarity]
-            const pokemonConfig: IPokemonConfig | undefined =
-              pokemonCollection.get(pokemon.index)
+            const custom = getPkmWithCustom(pokemon.index, currentPlayer?.pokemonCustoms)
 
             return (
               <div
-                className={`my-box clickable game-pokemon-portrait`}
+                className={cc(`my-box clickable game-pokemon-portrait`, { pixelated: !antialiasing })}
                 key={"game-additional-pokemons-" + index}
                 style={{
                   backgroundColor: rarityColor,
                   borderColor: rarityColor,
-                  backgroundImage: `url("${getPortraitSrc(
-                    pokemon.index,
-                    pokemonConfig?.selectedShiny,
-                    pokemonConfig?.selectedEmotion
-                  )}")`
+                  backgroundImage: `url("${getPortraitSrc(pokemon.index, custom.shiny, custom.emotion)}")`
                 }}
               >
                 <ul className="game-pokemon-portrait-types">

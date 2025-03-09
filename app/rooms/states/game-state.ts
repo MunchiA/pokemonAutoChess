@@ -23,12 +23,13 @@ import { Item } from "../../types/enum/Item"
 import { Pkm } from "../../types/enum/Pokemon"
 import { SpecialGameRule } from "../../types/enum/SpecialGameRule"
 import { Weather } from "../../types/enum/Weather"
+import { TownEncounter } from "../../core/town-encounters"
 import { pickRandomIn, randomBetween } from "../../utils/random"
 
 export default class GameState extends Schema {
   @type("string") afterGameId = ""
-  @type("uint8") roundTime = StageDuration[1]
-  @type("uint8") phase = GamePhaseState.PICK
+  @type("uint8") roundTime = StageDuration[0]
+  @type("uint8") phase = GamePhaseState.TOWN
   @type({ map: Player }) players = new MapSchema<Player>()
   @type({ map: PokemonAvatarModel }) avatars =
     new MapSchema<PokemonAvatarModel>()
@@ -36,7 +37,7 @@ export default class GameState extends Schema {
   @type({ map: Portal }) portals = new MapSchema<Portal>()
   @type({ map: SynergySymbol }) symbols = new MapSchema<SynergySymbol>()
   @type(["string"]) additionalPokemons = new ArraySchema<Pkm>()
-  @type("uint8") stageLevel = 1
+  @type("uint8") stageLevel = 0
   @type("string") weather: Weather
   @type("boolean") noElo = false
   @type("string") gameMode: GameMode = GameMode.CUSTOM_LOBBY
@@ -45,8 +46,8 @@ export default class GameState extends Schema {
   @type("uint8") lightX = randomBetween(0, BOARD_WIDTH - 1)
   @type("uint8") lightY = randomBetween(1, BOARD_HEIGHT / 2)
   @type("string") specialGameRule: SpecialGameRule | null = null
-
-  time = StageDuration[1] * 1000
+  @type("string") townEncounter: TownEncounter | null = null
+  time = StageDuration[0] * 1000
   updatePhaseNeeded = false
   botManager: BotManager = new BotManager()
   shop: Shop = new Shop()
@@ -61,6 +62,7 @@ export default class GameState extends Schema {
   pveRewardsPropositions: Item[] = []
   minRank: EloRank | null = null
   maxRank: EloRank | null = null
+  wanderers: Map<string, Pkm> = new Map<string, Pkm>()
 
   constructor(
     preparationId: string,

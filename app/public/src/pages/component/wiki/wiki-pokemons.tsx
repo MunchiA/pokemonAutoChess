@@ -17,6 +17,7 @@ import { cc } from "../../utils/jsx"
 import { GamePokemonDetail } from "../game/game-pokemon-detail"
 import { PokemonTypeahead } from "../typeahead/pokemon-typeahead"
 import WikiPokemonDetail from "./wiki-pokemon-detail"
+import PokemonPortrait from "../pokemon-portrait"
 
 export default function WikiPokemons() {
   const { t } = useTranslation()
@@ -96,11 +97,8 @@ export function WikiPokemon(props: {
       <TabList>
         {pokemons.map((pkm) => {
           return (
-            <Tab key={"title-" + pkm}>
-              <img
-                className="pokemon-portrait"
-                src={getPortraitSrc(PkmIndex[pkm])}
-              ></img>
+            <Tab key={"title-" + pkm} className="react-tabs__tab icon-tab">
+              <PokemonPortrait portrait={PkmIndex[pkm]} />
             </Tab>
           )
         })}
@@ -109,7 +107,7 @@ export function WikiPokemon(props: {
       {pokemons.map((pkm) => {
         return (
           <TabPanel key={pkm}>
-            <WikiPokemonDetail pokemon={pkm} />
+            <WikiPokemonDetail pokemon={pkm} selectPkm={props.onSelect} />
           </TabPanel>
         )
       })}

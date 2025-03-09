@@ -60,7 +60,6 @@
 #team-editor td img {
   width: 80px;
   height: 80px;
-  image-rendering: pixelated;
 }
 
 #team-editor td .pokemon-items {
@@ -116,7 +115,6 @@
 #item-picker img.item {
   width: 40px;
   height: 40px;
-  image-rendering: pixelated;
   cursor: var(--cursor-hover);
   margin: 2px;
 }
@@ -140,7 +138,6 @@
 
 #pokemon-picker .pokemon-portrait img {
   display: block;
-  image-rendering: pixelated;
 }
 
 #pokemon-picker .react-tabs__tab {
@@ -154,6 +151,23 @@
 
 #pokemon-picker .react-tabs__tab img {
   display: block;
+}
+
+#pokemon-picker .synergy-overlaps {
+  display: flex;
+  gap: 0.5em;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+#pokemon-picker summary {
+  margin: .5em 0;
+  font-size: 1rem;
+}
+
+#pokemon-picker .filters label {
+  float: right;
+  margin-left: 1em;
 }
 
 #rarity-grid {

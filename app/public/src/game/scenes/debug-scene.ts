@@ -15,6 +15,7 @@ import { displayAbility } from "../components/abilities-animations"
 import { displayBoost } from "../components/boosts-animations"
 import LoadingManager from "../components/loading-manager"
 import PokemonSprite from "../components/pokemon"
+import { DEPTH } from "../depths"
 
 type Boost =
   | "BOOST/ATK"
@@ -22,7 +23,7 @@ type Boost =
   | "BOOST/DEF"
   | "BOOST/SPE_DEF"
   | "BOOST/SHIELD"
-  | "BOOST/ATK_SPEED"
+  | "BOOST/SPEED"
 
 export class DebugScene extends Phaser.Scene {
   height: number
@@ -36,6 +37,7 @@ export class DebugScene extends Phaser.Scene {
   uid = "debug"
   tilemap: DesignTiled | undefined
   map: Phaser.Tilemaps.Tilemap | undefined
+  colorFilter: Phaser.GameObjects.Rectangle | null = null
   music: Phaser.Sound.WebAudioSound | null = null
   attackAnimInterval: ReturnType<typeof setInterval> | undefined
 
@@ -85,7 +87,7 @@ export class DebugScene extends Phaser.Scene {
       this,
       px,
       py,
-      PokemonFactory.createPokemonFromName(pkm, { selectedShiny: shiny }),
+      PokemonFactory.createPokemonFromName(pkm, { shiny }),
       "debug",
       false,
       false
@@ -107,6 +109,18 @@ export class DebugScene extends Phaser.Scene {
     if (animationType === "Emote") {
       animationName = AnimationConfig[pkm].emote
     }
+    if (animationType === "Hop") {
+      animationName = AnimationConfig[pkm].hop ?? AnimationType.Hop
+    }
+    if (animationType === "Hurt") {
+      animationName = AnimationConfig[pkm].hurt ?? AnimationType.Hurt
+    }
+    if (animationType === "Sleep") {
+      animationName = AnimationConfig[pkm].sleep ?? AnimationType.Sleep
+    }
+    if (animationType === "Eat") {
+      animationName = AnimationConfig[pkm].eat ?? AnimationType.Eat
+    }
 
     try {
       this.animationManager?.play(this.pokemon, animationName, { repeat: -1 })
@@ -119,8 +133,27 @@ export class DebugScene extends Phaser.Scene {
     this.applyStatusAnimation(status)
   }
 
-  updateMap(mapName: DungeonPMDO): Promise<void> {
+  updateMap(mapName: DungeonPMDO | "town"): Promise<void> {
     if (this.map) this.map.destroy()
+
+    if (mapName === "town") {
+      return new Promise((resolve) => {
+        this.map = this.add.tilemap("town")
+        const tileset = this.map.addTilesetImage(
+          "town_tileset",
+          "town_tileset"
+        )!
+        this.map.createLayer("layer0", tileset, 0, 0)?.setScale(2, 2)
+        this.map.createLayer("layer1", tileset, 0, 0)?.setScale(2, 2)
+        this.map.createLayer("layer2", tileset, 0, 0)?.setScale(2, 2)
+        const sys = this.sys as any
+        if (sys.animatedTiles) {
+          sys.animatedTiles.pause()
+        }
+        playMusic(this as any, DungeonDetails[mapName].music)
+        resolve()
+      })
+    }
 
     return fetch(`/tilemap/${mapName}`)
       .then((res) => res.json())
@@ -154,6 +187,31 @@ export class DebugScene extends Phaser.Scene {
         ;(this.sys as any).animatedTiles.init(map)
         playMusic(this as any, DungeonDetails[mapName].music)
       })
+  }
+
+  updateColorFilter({
+    red,
+    green,
+    blue,
+    alpha
+  }: {
+    red: number
+    green: number
+    blue: number
+    alpha: number
+  }) {
+    this.colorFilter?.destroy()
+    this.colorFilter = this.add.existing(
+      new Phaser.GameObjects.Rectangle(
+        this,
+        1500,
+        1000,
+        3000,
+        2000,
+        new Phaser.Display.Color(red, green, blue).color,
+        alpha / 100
+      ).setDepth(DEPTH.WEATHER_FX)
+    )
   }
 
   applyStatusAnimation(status: Status | Boost | "") {
@@ -224,7 +282,7 @@ export class DebugScene extends Phaser.Scene {
       if (status == Status.POKERUS) {
         this.pokemon.addPokerus()
       }
-      if (status == Status.ARMOR_REDUCTION) {
+      if (status == Status.ARMOR_BREAK) {
         this.pokemon.addArmorReduction()
       }
       if (status == Status.CHARM) {
@@ -282,8 +340,8 @@ export class DebugScene extends Phaser.Scene {
       if (status === "BOOST/SHIELD") {
         this.displayBoost(Stat.SHIELD)
       }
-      if (status === "BOOST/ATK_SPEED") {
-        this.displayBoost(Stat.ATK_SPEED)
+      if (status === "BOOST/SPEED") {
+        this.displayBoost(Stat.SPEED)
       }
     }
   }

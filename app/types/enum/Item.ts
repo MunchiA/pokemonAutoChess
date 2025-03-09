@@ -96,7 +96,6 @@ export enum Item {
   SILK_SCARF = "SILK_SCARF",
   TINY_MUSHROOM = "TINY_MUSHROOM",
   METEORITE = "METEORITE",
-  BERRY_JUICE = "BERRY_JUICE",
   TRASH = "TRASH",
   DYNAMAX_BAND = "DYNAMAX_BAND",
   SHINY_STONE = "SHINY_STONE",
@@ -142,7 +141,50 @@ export enum Item {
   HM_FLASH = "HM_FLASH",
   HM_ROCK_SMASH = "HM_ROCK_SMASH",
   HM_WHIRLPOOL = "HM_WHIRLPOOL",
-  HM_WATERFALL = "HM_WATERFALL"
+  HM_WATERFALL = "HM_WATERFALL",
+  CHEF_HAT = "CHEF_HAT",
+  RAGE_CANDY_BAR = "RAGE_CANDY_BAR",
+  TEA = "TEA",
+  CURRY = "CURRY",
+  CASTELIACONE = "CASTELIACONE",
+  WHIPPED_DREAM = "WHIPPED_DREAM",
+  BERRY_JUICE = "BERRY_JUICE",
+  TART_APPLE = "TART_APPLE",
+  SWEET_APPLE = "SWEET_APPLE",
+  SIRUPY_APPLE = "SIRUPY_APPLE",
+  SWEET_HERB = "SWEET_HERB",
+  MOOMOO_MILK = "MOOMOO_MILK",
+  BERRIES = "BERRIES",
+  HONEY = "HONEY",
+  POFFIN = "POFFIN",
+  ROCK_SALT = "ROCK_SALT",
+  NUTRITIOUS_EGG = "NUTRITIOUS_EGG",
+  LEFTOVERS = "LEFTOVERS",
+  BLACK_SLUDGE = "BLACK_SLUDGE",
+  FRUIT_JUICE = "FRUIT_JUICE",
+  LEEK = "LEEK",
+  LARGE_LEEK = "LARGE_LEEK",
+  SPINDA_COCKTAIL = "SPINDA_COCKTAIL",
+  STRAWBERRY_SWEET = "STRAWBERRY_SWEET",
+  LOVE_SWEET = "LOVE_SWEET",
+  BERRY_SWEET = "BERRY_SWEET",
+  CLOVER_SWEET = "CLOVER_SWEET",
+  FLOWER_SWEET = "FLOWER_SWEET",
+  STAR_SWEET = "STAR_SWEET",
+  RIBBON_SWEET = "RIBBON_SWEET",
+  SWEETS = "SWEETS",
+  VANILLA_FLAVOR = "VANILLA_FLAVOR",
+  RUBY_FLAVOR = "RUBY_FLAVOR",
+  MATCHA_FLAVOR = "MATCHA_FLAVOR",
+  MINT_FLAVOR = "MINT_FLAVOR",
+  LEMON_FLAVOR = "LEMON_FLAVOR",
+  SALTED_FLAVOR = "SALTED_FLAVOR",
+  RUBY_SWIRL_FLAVOR = "RUBY_SWIRL_FLAVOR",
+  CARAMEL_SWIRL_FLAVOR = "CARAMEL_SWIRL_FLAVOR",
+  RAINBOW_SWIRL_FLAVOR = "RAINBOW_SWIRL_FLAVOR",
+  EGG_FOR_SELL = "EGG_FOR_SELL",
+  GIMMIGHOUL_COIN = "GIMMIGHOUL_COIN",
+  EXCHANGE_TICKET = "EXCHANGE_TICKET"
 }
 
 export const AllItems: Item[] = Object.values(Item)
@@ -161,7 +203,20 @@ export const SpecialItems: Item[] = [
   Item.OLD_ROD,
   Item.GOOD_ROD,
   Item.SUPER_ROD,
-  Item.TRASH
+  Item.TRASH,
+  Item.CHEF_HAT,
+  Item.VANILLA_FLAVOR,
+  Item.RUBY_FLAVOR,
+  Item.MATCHA_FLAVOR,
+  Item.MINT_FLAVOR,
+  Item.LEMON_FLAVOR,
+  Item.SALTED_FLAVOR,
+  Item.RUBY_SWIRL_FLAVOR,
+  Item.CARAMEL_SWIRL_FLAVOR,
+  Item.RAINBOW_SWIRL_FLAVOR,
+  Item.EGG_FOR_SELL,
+  Item.GIMMIGHOUL_COIN,
+  Item.EXCHANGE_TICKET
 ]
 
 export const FishingRods = [
@@ -395,12 +450,19 @@ export const NonSpecialItemComponents: Item[] = [
   Item.MYSTIC_WATER
 ]
 
+export const CraftableNonSynergyItems: Item[] = CraftableItems.filter(
+  (item) => SynergyGivenByItem.hasOwnProperty(item) === false
+)
+
 export const NonHoldableItems: Item[] = [
   ...WeatherRocks,
   ...FishingRods,
   Item.METEORITE,
   Item.ZYGARDE_CUBE,
-  Item.FIRE_SHARD
+  Item.FIRE_SHARD,
+  Item.GIMMIGHOUL_COIN,
+  Item.EGG_FOR_SELL,
+  Item.EXCHANGE_TICKET
 ]
 
 export const OgerponMasks: Item[] = [
@@ -450,3 +512,105 @@ export const AbilityPerTM: { [item in Item]?: Ability } = {
   [Item.HM_WATERFALL]: Ability.WATERFALL,
   [Item.HM_WHIRLPOOL]: Ability.WHIRLPOOL
 }
+
+export const Dishes = [
+  Item.RAGE_CANDY_BAR,
+  Item.ROCK_SALT,
+  Item.TEA,
+  Item.CURRY,
+  Item.POFFIN,
+  Item.CASTELIACONE,
+  Item.WHIPPED_DREAM,
+  Item.TART_APPLE,
+  Item.SWEET_APPLE,
+  Item.SIRUPY_APPLE,
+  Item.SWEET_HERB,
+  Item.HONEY,
+  Item.LEFTOVERS,
+  Item.BLACK_SLUDGE,
+  Item.FRUIT_JUICE,
+  Item.NUTRITIOUS_EGG,
+  Item.LEEK,
+  Item.LARGE_LEEK,
+  Item.MOOMOO_MILK,
+  Item.SPINDA_COCKTAIL,
+  Item.BERRY_JUICE,
+  Item.BERRIES,
+  Item.STRAWBERRY_SWEET,
+  Item.LOVE_SWEET,
+  Item.BERRY_SWEET,
+  Item.CLOVER_SWEET,
+  Item.FLOWER_SWEET,
+  Item.STAR_SWEET,
+  Item.RIBBON_SWEET,
+  Item.SWEETS
+] as const
+
+export const Flavors = [
+  Item.VANILLA_FLAVOR,
+  Item.RUBY_FLAVOR,
+  Item.MATCHA_FLAVOR,
+  Item.MINT_FLAVOR,
+  Item.LEMON_FLAVOR,
+  Item.SALTED_FLAVOR,
+  Item.RUBY_SWIRL_FLAVOR,
+  Item.CARAMEL_SWIRL_FLAVOR,
+  Item.RAINBOW_SWIRL_FLAVOR
+]
+
+export const SynergyFlavors: {
+  [key in Synergy]:
+    | Item.VANILLA_FLAVOR
+    | Item.RUBY_FLAVOR
+    | Item.MATCHA_FLAVOR
+    | Item.MINT_FLAVOR
+    | Item.LEMON_FLAVOR
+    | Item.SALTED_FLAVOR
+    | Item.RUBY_SWIRL_FLAVOR
+    | Item.CARAMEL_SWIRL_FLAVOR
+    | Item.RAINBOW_SWIRL_FLAVOR
+} = {
+  [Synergy.NORMAL]: Item.VANILLA_FLAVOR,
+  [Synergy.GRASS]: Item.MATCHA_FLAVOR,
+  [Synergy.FIRE]: Item.RUBY_SWIRL_FLAVOR,
+  [Synergy.WATER]: Item.MINT_FLAVOR,
+  [Synergy.ELECTRIC]: Item.LEMON_FLAVOR,
+  [Synergy.FIGHTING]: Item.RUBY_FLAVOR,
+  [Synergy.PSYCHIC]: Item.RAINBOW_SWIRL_FLAVOR,
+  [Synergy.DARK]: Item.CARAMEL_SWIRL_FLAVOR,
+  [Synergy.STEEL]: Item.RUBY_FLAVOR,
+  [Synergy.GROUND]: Item.SALTED_FLAVOR,
+  [Synergy.POISON]: Item.MATCHA_FLAVOR,
+  [Synergy.DRAGON]: Item.CARAMEL_SWIRL_FLAVOR,
+  [Synergy.FIELD]: Item.RUBY_SWIRL_FLAVOR,
+  [Synergy.MONSTER]: Item.CARAMEL_SWIRL_FLAVOR,
+  [Synergy.HUMAN]: Item.RUBY_FLAVOR,
+  [Synergy.AQUATIC]: Item.MINT_FLAVOR,
+  [Synergy.BUG]: Item.LEMON_FLAVOR,
+  [Synergy.FLYING]: Item.VANILLA_FLAVOR,
+  [Synergy.FLORA]: Item.MATCHA_FLAVOR,
+  [Synergy.ROCK]: Item.SALTED_FLAVOR,
+  [Synergy.GHOST]: Item.MATCHA_FLAVOR,
+  [Synergy.FAIRY]: Item.LEMON_FLAVOR,
+  [Synergy.ICE]: Item.MINT_FLAVOR,
+  [Synergy.FOSSIL]: Item.SALTED_FLAVOR,
+  [Synergy.SOUND]: Item.LEMON_FLAVOR,
+  [Synergy.ARTIFICIAL]: Item.VANILLA_FLAVOR,
+  [Synergy.LIGHT]: Item.RAINBOW_SWIRL_FLAVOR,
+  [Synergy.WILD]: Item.RUBY_SWIRL_FLAVOR,
+  [Synergy.BABY]: Item.RAINBOW_SWIRL_FLAVOR,
+  [Synergy.AMORPHOUS]: Item.RAINBOW_SWIRL_FLAVOR,
+  [Synergy.GOURMET]: Item.VANILLA_FLAVOR
+}
+
+export const Sweets = [
+  Item.STRAWBERRY_SWEET,
+  Item.LOVE_SWEET,
+  Item.FLOWER_SWEET,
+  Item.CLOVER_SWEET,
+  Item.BERRY_SWEET,
+  Item.CLOVER_SWEET,
+  Item.FLOWER_SWEET,
+  Item.STAR_SWEET,
+  Item.RIBBON_SWEET
+]

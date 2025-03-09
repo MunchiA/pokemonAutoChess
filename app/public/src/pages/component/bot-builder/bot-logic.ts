@@ -10,9 +10,9 @@ import {
 } from "../../../../../types/Config"
 import { Rarity } from "../../../../../types/enum/Game"
 import {
-  ItemComponents,
   CraftableItems,
-  Item
+  Item,
+  ItemComponents
 } from "../../../../../types/enum/Item"
 import { Pkm, PkmDuos, PkmIndex } from "../../../../../types/enum/Pokemon"
 import { logger } from "../../../../../utils/logger"
@@ -47,6 +47,7 @@ export const POWER_SCORE_BY_CATEGORY = {
   "UNCOMMON 3S T4": 7,
   "RARE T1": 1.5,
   "RARE 2S T2": 4,
+  "RARE 2S T3": 7,
   "RARE 3S T2": 3,
   "RARE 3S T3": 6,
   "HATCH T1": 1.5,
@@ -254,12 +255,12 @@ export function validateBoard(board: IDetailledPokemon[], stage: number) {
 
   if (stage < PortalCarouselStages[0] && uniques.length > 0) {
     throw new Error(
-      `Unique Pokemons can't be played before stage ${PortalCarouselStages[0]}`
+      `Unique Pokemons can't be played before stage ${PortalCarouselStages[1]}`
     )
   }
   if (stage < PortalCarouselStages[1] && legendaries.length > 0) {
     throw new Error(
-      `Legendary Pokemons can't be played before stage ${PortalCarouselStages[1]}`
+      `Legendary Pokemons can't be played before stage ${PortalCarouselStages[2]}`
     )
   }
 

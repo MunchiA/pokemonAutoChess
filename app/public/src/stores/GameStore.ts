@@ -1,11 +1,14 @@
-import { ArraySchema, MapSchema } from "@colyseus/schema"
 import { PayloadAction, createSlice } from "@reduxjs/toolkit"
 import Simulation from "../../../core/simulation"
 import ExperienceManager from "../../../models/colyseus-models/experience-manager"
-import PokemonCollection from "../../../models/colyseus-models/pokemon-collection"
 import Synergies from "../../../models/colyseus-models/synergies"
-import { IPokemonConfig } from "../../../models/mongo-models/user-metadata"
-import { IDps, IExperienceManager, IPlayer, ISimulation } from "../../../types"
+import {
+  Emotion,
+  IDps,
+  IExperienceManager,
+  IPlayer,
+  ISimulation
+} from "../../../types"
 import { StageDuration } from "../../../types/Config"
 import { GamePhaseState, Team } from "../../../types/enum/Game"
 import { Item } from "../../../types/enum/Item"
@@ -14,6 +17,8 @@ import { SpecialGameRule } from "../../../types/enum/SpecialGameRule"
 import { Synergy } from "../../../types/enum/Synergy"
 import { Weather } from "../../../types/enum/Weather"
 import { getGameScene } from "../pages/game"
+import { entries } from "../../../utils/schemas"
+import { ILeaderboardInfo } from "../../../types/interfaces/LeaderboardInfo"
 
 export interface GameStateStore {
   afterGameId: string
@@ -41,8 +46,9 @@ export interface GameStateStore {
   weather: Weather
   blueDpsMeter: IDps[]
   redDpsMeter: IDps[]
-  pokemonCollection: MapSchema<IPokemonConfig>
+  emotesUnlocked: Emotion[]
   additionalPokemons: Pkm[]
+  podium: ILeaderboardInfo[]
 }
 
 const initialState: GameStateStore = {
@@ -70,9 +76,10 @@ const initialState: GameStateStore = {
   currentPlayerSynergies: new Array<[Synergy, number]>(),
   blueDpsMeter: new Array<IDps>(),
   redDpsMeter: new Array<IDps>(),
-  pokemonCollection: new MapSchema<IPokemonConfig>(),
+  emotesUnlocked: [],
   additionalPokemons: new Array<Pkm>(),
-  specialGameRule: null
+  specialGameRule: null,
+  podium: new Array<ILeaderboardInfo>()
 }
 
 export const gameSlice = createSlice({
@@ -138,19 +145,31 @@ export const gameSlice = createSlice({
       action: PayloadAction<{ id: string; field: string; value: any }>
     ) => {
       const index = state.players.findIndex((e) => action.payload.id == e.id)
-      state.players[index][action.payload.field] = action.payload.value
+      if (index >= 0) {
+        state.players[index][action.payload.field] = action.payload.value
+      } else {
+        console.error(
+          `changePlayer: Player not found ${action.payload.id} in ${state.players.map((p) => p.id)}`
+        )
+      }
     },
-    setShop: (state, action: PayloadAction<ArraySchema<Pkm>>) => {
-      state.shop = action.payload as unknown as Pkm[]
+    changeShop: (
+      state,
+      action: PayloadAction<{ index: number; value: Pkm }>
+    ) => {
+      state.shop[action.payload.index] = action.payload.value
     },
-    setItemsProposition: (state, action: PayloadAction<ArraySchema<Item>>) => {
-      state.itemsProposition = action.payload.map((i) => i)
+    refreshShopUI: (state) => {
+      state.shop = state.shop.slice()
+    },
+    setItemsProposition: (state, action: PayloadAction<Item[]>) => {
+      state.itemsProposition = action.payload
     },
     setPokemonProposition: (state, action: PayloadAction<PkmProposition[]>) => {
-      state.pokemonsProposition = action.payload.map((p) => p)
+      state.pokemonsProposition = action.payload
     },
     setAdditionalPokemons: (state, action: PayloadAction<Pkm[]>) => {
-      state.additionalPokemons = action.payload.map((p) => p)
+      state.additionalPokemons = action.payload
     },
     setSynergies: (
       state,
@@ -165,8 +184,9 @@ export const gameSlice = createSlice({
       )
 
       if (playerToUpdate !== -1) {
-        state.players.at(playerToUpdate)!.synergies =
-          action.payload.value.toJSON()
+        state.players.at(playerToUpdate)!.synergies = new Map(
+          entries(action.payload.value)
+        )
       }
     },
     setLife: (state, action: PayloadAction<{ value: number; id: string }>) => {
@@ -266,9 +286,14 @@ export const gameSlice = createSlice({
       }
     },
 
-    setPokemonCollection: (state, action: PayloadAction<PokemonCollection>) => {
-      state.pokemonCollection = action.payload
+    setEmotesUnlocked: (state, action: PayloadAction<string>) => {
+      state.emotesUnlocked = action.payload.split(",") as Emotion[]
     },
+
+    setPodium(state, action: PayloadAction<ILeaderboardInfo[]>) {
+      state.podium = action.payload
+    },
+
     leaveGame: () => initialState
   }
 })
@@ -277,7 +302,7 @@ export const {
   setSimulation,
   setAdditionalPokemons,
   setPokemonProposition,
-  setPokemonCollection,
+  setEmotesUnlocked,
   leaveGame,
   removeDpsMeter,
   changeDpsMeter,
@@ -302,8 +327,10 @@ export const {
   setShopFreeRolls,
   setShopLocked,
   changePlayer,
-  setShop,
-  setItemsProposition
+  changeShop,
+  refreshShopUI,
+  setItemsProposition,
+  setPodium
 } = gameSlice.actions
 
 export default gameSlice.reducer

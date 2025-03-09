@@ -2,9 +2,7 @@ import React, { useEffect, useMemo, useState } from "react"
 import { Tooltip } from "react-tooltip"
 import { CountEvolutionRule } from "../../../../../core/evolution-rules"
 import { Pokemon } from "../../../../../models/colyseus-models/pokemon"
-import { IPokemonConfig } from "../../../../../models/mongo-models/user-metadata"
 import PokemonFactory from "../../../../../models/pokemon-factory"
-import { getPokemonData } from "../../../../../models/precomputed/precomputed-pokemon-data"
 import { getBuyPrice } from "../../../../../models/shop"
 import { RarityColor } from "../../../../../types/Config"
 import { Pkm, PkmFamily } from "../../../../../types/enum/Pokemon"
@@ -15,6 +13,8 @@ import { cc } from "../../utils/jsx"
 import { Money } from "../icons/money"
 import SynergyIcon from "../icons/synergy-icon"
 import { GamePokemonDetail } from "./game-pokemon-detail"
+import { usePreference } from "../../../preferences"
+import { getPkmWithCustom } from "../../../../../models/colyseus-models/pokemon-customs"
 import "./game-pokemon-portrait.css"
 
 export default function GamePokemonPortrait(props: {
@@ -26,16 +26,13 @@ export default function GamePokemonPortrait(props: {
   onMouseLeave?: React.MouseEventHandler<HTMLDivElement>,
   inPlanner?: boolean
 }) {
+  const [antialiasing] = usePreference("antialiasing")
   const pokemon = useMemo(
     () =>
       typeof props.pokemon === "string"
         ? PokemonFactory.createPokemonFromName(props.pokemon)
         : props.pokemon,
     [props.pokemon]
-  )
-
-  const pokemonCollection = useAppSelector(
-    (state) => state.game.pokemonCollection
   )
 
   const uid: string = useAppSelector((state) => state.network.uid)
@@ -63,14 +60,14 @@ export default function GamePokemonPortrait(props: {
       board.forEach &&
       !isOnAnotherBoard &&
       props.pokemon &&
-      pokemon
+      pokemon &&
+      pokemon.hasEvolution
     ) {
       board.forEach((p) => {
-        if (p.name === pokemon.name && p.evolution !== Pkm.DEFAULT) {
+        if (p.name === pokemon.name) {
           _count++
         } else if (
-          PkmFamily[p.name] === pokemon.name &&
-          p.evolution !== Pkm.DEFAULT
+          PkmFamily[p.name] === pokemon.name
         ) {
           _countEvol++
         }
@@ -85,14 +82,13 @@ export default function GamePokemonPortrait(props: {
     return <div className="game-pokemon-portrait my-box empty" />
   }
 
-  const pokemonConfig: IPokemonConfig | undefined = pokemonCollection.get(
-    pokemon.index
-  )
-
+  const pokemonCustom = getPkmWithCustom(pokemon.index, currentPlayer?.pokemonCustoms)
   const rarityColor = RarityColor[pokemon.rarity]
 
-  let pokemonEvolution = pokemon.evolution
-  const pokemonEvolution2 = getPokemonData(pokemonEvolution).evolution
+  const evolutionName = currentPlayer
+    ? pokemon.evolutionRule.getEvolution(pokemon, currentPlayer)
+    : pokemon.evolutions[0] ?? pokemon.evolution
+  let pokemonEvolution = PokemonFactory.createPokemonFromName(evolutionName)
 
   const willEvolve =
     pokemon.evolutionRule instanceof CountEvolutionRule &&
@@ -100,22 +96,25 @@ export default function GamePokemonPortrait(props: {
 
   const shouldShimmer =
     pokemon.evolutionRule instanceof CountEvolutionRule &&
-    ((count > 0 && pokemonEvolution !== Pkm.DEFAULT) ||
-      (countEvol > 0 && pokemonEvolution2 !== Pkm.DEFAULT))
+    ((count > 0 && pokemon.hasEvolution) ||
+      (countEvol > 0 && pokemonEvolution.hasEvolution))
 
   if (
     pokemon.evolutionRule instanceof CountEvolutionRule &&
     count === pokemon.evolutionRule.numberRequired - 1 &&
     countEvol === pokemon.evolutionRule.numberRequired - 1 &&
-    pokemonEvolution2 != null
-  )
-    pokemonEvolution = pokemonEvolution2
+    pokemonEvolution.hasEvolution
+  ) {
+    const evolutionName2 = currentPlayer
+      ? pokemonEvolution.evolutionRule.getEvolution(pokemonEvolution, currentPlayer)
+      : pokemonEvolution.evolutions[0] ?? pokemonEvolution.evolution
+    pokemonEvolution = PokemonFactory.createPokemonFromName(evolutionName2)
+  }
 
   const pokemonInPortrait =
     willEvolve && pokemonEvolution
-      ? PokemonFactory.createPokemonFromName(pokemonEvolution)
+      ? pokemonEvolution
       : pokemon
-  const pokemonInPortraitConfig = pokemonCollection.get(pokemonInPortrait.index)
 
   let cost = getBuyPrice(pokemon.name, specialGameRule)
 
@@ -134,15 +133,16 @@ export default function GamePokemonPortrait(props: {
       className={cc("my-box", "clickable", "game-pokemon-portrait", {
         shimmer: shouldShimmer,
         disabled: !canBuy && props.origin === "shop",
-        planned: props.inPlanner ?? false
+        planned: props.inPlanner ?? false,
+        pixelated: !antialiasing
       })}
       style={{
         backgroundColor: rarityColor,
         borderColor: rarityColor,
         backgroundImage: `url("${getPortraitSrc(
           pokemonInPortrait.index,
-          pokemonInPortraitConfig?.selectedShiny,
-          pokemonInPortraitConfig?.selectedEmotion
+          pokemonCustom.shiny,
+          pokemonCustom.emotion
         )}")`
       }}
       onClick={(e) => {
@@ -160,8 +160,8 @@ export default function GamePokemonPortrait(props: {
         <GamePokemonDetail
           key={pokemonInPortrait.id}
           pokemon={pokemonInPortrait}
-          emotion={pokemonInPortraitConfig?.selectedEmotion}
-          shiny={pokemonInPortraitConfig?.selectedShiny}
+          emotion={pokemonCustom.emotion}
+          shiny={pokemonCustom.shiny}
         />
       </Tooltip>
       {willEvolve && pokemonEvolution && (
@@ -169,15 +169,19 @@ export default function GamePokemonPortrait(props: {
           <img
             src={getPortraitSrc(
               pokemon.index,
-              pokemonConfig?.selectedShiny,
-              pokemonConfig?.selectedEmotion
+              pokemonCustom.shiny,
+              pokemonCustom.emotion
             )}
-            className="game-pokemon-portrait-evolution-portrait"
+            className={cc("game-pokemon-portrait-evolution-portrait", {
+              pixelated: !antialiasing
+            })}
           />
           <img
             src="/assets/ui/evolution.png"
             alt=""
-            className="game-pokemon-portrait-evolution-icon"
+            className={cc("game-pokemon-portrait-evolution-icon", {
+              pixelated: !antialiasing
+            })}
           />
         </div>
       )}

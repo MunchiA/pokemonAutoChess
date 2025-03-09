@@ -12,13 +12,16 @@ import Lobby from "./pages/lobby"
 import Preparation from "./pages/preparation"
 import { SpriteDebug } from "./pages/sprite-viewer"
 import { Gameboy } from "./pages/gameboy"
-import { loadPreferences } from "./preferences"
 import store from "./stores/index"
 
 import "./i18n"
 import "./style/index.css"
 
-loadPreferences()
+// Redirect top window if running in an iframe
+if (window.top && window !== window.top) {
+  window.top.location = window.location;
+}
+
 const container = document.getElementById("root")
 const root = createRoot(container!)
 
@@ -26,7 +29,10 @@ root.render(
   <Provider store={store}>
     <React.StrictMode>
       <Suspense fallback="loading">
-        <BrowserRouter>
+        <BrowserRouter future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}>
           <Routes>
             <Route path="/" element={<Auth />} />
             <Route path="/lobby" element={<Lobby />} />

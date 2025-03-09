@@ -1,4 +1,5 @@
 import Player from "../models/colyseus-models/player"
+import { SynergyEffects } from "../models/effects"
 import { IPokemonEntity, Transfer } from "../types"
 import { ARMOR_FACTOR, FIGHTING_PHASE_DURATION } from "../types/Config"
 import { Ability } from "../types/enum/Ability"
@@ -13,7 +14,7 @@ import {
 import { Item } from "../types/enum/Item"
 import { Passive } from "../types/enum/Passive"
 import { Pkm, PkmIndex } from "../types/enum/Pokemon"
-import { Synergy, SynergyEffects } from "../types/enum/Synergy"
+import { Synergy } from "../types/enum/Synergy"
 import { Weather } from "../types/enum/Weather"
 import { count } from "../utils/array"
 import { distanceC, distanceM } from "../utils/distance"
@@ -50,6 +51,7 @@ export default abstract class PokemonState {
             : 0
           opponentCritPower -= 0.1 * nbBlackAugurite
           damage = min(0)(Math.round(damage * opponentCritPower))
+          target.count.crit++
         }
         pokemon.onCriticalAttack({ target, board, damage })
       }
@@ -62,12 +64,8 @@ export default abstract class PokemonState {
         damage = Math.ceil(damage * (1 + pokemon.ap / 100))
       }
 
-      if (pokemon.passive === Passive.SPOT_PANDA && target.status.confusion) {
-        damage = Math.ceil(damage * (1 + pokemon.ap / 100))
-      }
-
-      if (pokemon.status.stoneEdge) {
-        damage += Math.round(pokemon.def * (1 + pokemon.ap / 100))
+      if (pokemon.effects.has(Effect.STONE_EDGE)) {
+        damage += Math.round(pokemon.def * 0.5 * (1 + pokemon.ap / 100))
       }
 
       let additionalSpecialDamagePart = 0
@@ -79,6 +77,10 @@ export default abstract class PokemonState {
         additionalSpecialDamagePart += 0.6
       } else if (pokemon.effects.has(Effect.MOON_FORCE)) {
         additionalSpecialDamagePart += 0.8
+      }
+
+      if (pokemon.effects.has(Effect.CHARGE)) {
+        additionalSpecialDamagePart += 1 * pokemon.count.ult
       }
 
       let isAttackSuccessful = true
@@ -237,7 +239,7 @@ export default abstract class PokemonState {
         heal *= caster.critPower
       }
       if (pokemon.effects.has(Effect.BUFF_HEAL_RECEIVED)) {
-        heal *= 1.5
+        heal *= 1.3
       }
       if (pokemon.status.burn) {
         heal *= 0.5
@@ -278,7 +280,7 @@ export default abstract class PokemonState {
       if (apBoost > 0) shield *= 1 + (caster.ap * apBoost) / 100
       if (crit) shield *= caster.critPower
       if (pokemon.status.enraged) shield *= 0.5
-      if (pokemon.items.has(Item.SILK_SCARF)) shield *= 1.3
+      if (pokemon.items.has(Item.SILK_SCARF)) shield *= 1.5
 
       shield = Math.round(shield)
       pokemon.shield = min(0)(pokemon.shield + shield)
@@ -464,8 +466,8 @@ export default abstract class PokemonState {
       if (pokemon.shield > 0) {
         let damageOnShield
         if (pokemon.status.flinch) {
-          damageOnShield = reducedDamage * 0.5
-          residualDamage = reducedDamage * 0.5
+          damageOnShield = Math.ceil(reducedDamage * 0.5)
+          residualDamage = Math.ceil(reducedDamage * 0.5)
         } else {
           damageOnShield = reducedDamage
           residualDamage = 0
@@ -590,14 +592,14 @@ export default abstract class PokemonState {
         if (pokemon.passive === Passive.ELECTRIC_TERRAIN) {
           board.forEach((x, y, pkm) => {
             if (pkm && pkm.team == pokemon.team && pkm.status.electricField) {
-              pkm.removeElectricField()
+              pkm.status.removeElectricField(pkm)
             }
           })
           effectsRemovedList.push(Effect.ELECTRIC_TERRAIN)
         } else if (pokemon.passive === Passive.PSYCHIC_TERRAIN) {
           board.forEach((x, y, pkm) => {
             if (pkm && pkm.team == pokemon.team && pkm.status.psychicField) {
-              pkm.removePsychicField()
+              pkm.status.removePsychicField(pkm)
             }
           })
           effectsRemovedList.push(Effect.PSYCHIC_TERRAIN)
@@ -621,10 +623,12 @@ export default abstract class PokemonState {
           effectsRemovedList.forEach((x) =>
             pokemon.simulation.blueEffects.delete(x)
           )
+          pokemon.simulation.blueTeam.delete(pokemon.id)
         } else {
           effectsRemovedList.forEach((x) =>
             pokemon.simulation.redEffects.delete(x)
           )
+          pokemon.simulation.redTeam.delete(pokemon.id)
         }
       }
     }
@@ -642,7 +646,6 @@ export default abstract class PokemonState {
     pokemon: PokemonEntity,
     dt: number,
     board: Board,
-    weather: Weather,
     player: Player | undefined
   ) {
     this.updateCommands(pokemon, dt)
@@ -673,7 +676,7 @@ export default abstract class PokemonState {
           ? 30
           : pokemon.effects.has(Effect.GROWTH)
             ? 15
-            : 7
+            : 5
         pokemon.handleHeal(heal, pokemon, 0, false)
         pokemon.grassHealCooldown = 2000
         pokemon.simulation.room.broadcast(Transfer.ABILITY, {
@@ -695,7 +698,7 @@ export default abstract class PokemonState {
         const nbSmoothRocks = player ? count(player.items, Item.SMOOTH_ROCK) : 0
         if (nbSmoothRocks > 0) {
           sandstormDamage -= nbSmoothRocks
-          pokemon.addAttackSpeed(nbSmoothRocks, pokemon, 0, false)
+          pokemon.addSpeed(nbSmoothRocks, pokemon, 0, false)
         }
         if (pokemon.types.has(Synergy.GROUND) === false) {
           pokemon.handleDamage({
@@ -969,8 +972,30 @@ export default abstract class PokemonState {
         }
       }
     })
-
     return farthestTarget
+  }
+
+  getNearestAlly(
+    pokemon: PokemonEntity,
+    board: Board
+  ): PokemonEntity | undefined {
+    let nearestAlly: PokemonEntity | undefined = undefined
+    let minDistance = 999
+    board.forEach((x: number, y: number, value: PokemonEntity | undefined) => {
+      if (value && value.team === pokemon.team && pokemon.id !== value.id) {
+        const distance = distanceM(
+          pokemon.positionX,
+          pokemon.positionY,
+          value.positionX,
+          value.positionY
+        )
+        if (distance < minDistance) {
+          nearestAlly = value
+          minDistance = distance
+        }
+      }
+    })
+    return nearestAlly
   }
 
   getMostSurroundedCoordinateAvailablePlace(
@@ -1021,7 +1046,7 @@ export default abstract class PokemonState {
       const distance = distanceM(pokemon.positionX, pokemon.positionY, x, y)
       if (
         value === undefined &&
-        (maxRange === undefined || distance >= maxRange)
+        (maxRange === undefined || distance <= maxRange)
       ) {
         if (distance < minDistance) {
           candidateCells = [{ x, y, value }]

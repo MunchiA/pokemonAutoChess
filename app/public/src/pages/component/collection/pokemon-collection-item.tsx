@@ -1,5 +1,5 @@
 import React, { Dispatch, SetStateAction } from "react"
-import { IPokemonConfig } from "../../../../../models/mongo-models/user-metadata"
+import { IPokemonCollectionItem } from "../../../../../models/mongo-models/user-metadata"
 import { PRECOMPUTED_EMOTIONS_PER_POKEMON_INDEX } from "../../../../../models/precomputed/precomputed-emotions"
 import { getPokemonData } from "../../../../../models/precomputed/precomputed-pokemon-data"
 import { BoosterPriceByRarity, getEmotionCost } from "../../../../../types/Config"
@@ -8,16 +8,18 @@ import { Pkm } from "../../../../../types/enum/Pokemon"
 import { getPortraitSrc } from "../../../../../utils/avatar"
 import { cc } from "../../utils/jsx"
 import "./pokemon-collection-item.css"
+import { usePreferences } from "../../../preferences"
 
 export default function PokemonCollectionItem(props: {
   name: Pkm
   index: string
-  config: IPokemonConfig | undefined
+  config: IPokemonCollectionItem | undefined
   filter: string
   shinyOnly: boolean
   refundableOnly: boolean
   setPokemon: Dispatch<SetStateAction<Pkm | "">>
 }) {
+  const [{ antialiasing }] = usePreferences()
   if (
     props.index in PRECOMPUTED_EMOTIONS_PER_POKEMON_INDEX === false ||
     PRECOMPUTED_EMOTIONS_PER_POKEMON_INDEX[props.index].includes(1) === false
@@ -70,10 +72,14 @@ export default function PokemonCollectionItem(props: {
           props.config?.selectedEmotion
         )}
         loading="lazy"
+        className={cc({ pixelated: !antialiasing })}
       />
       <p>
         <span>{props.config ? props.config.dust : 0}</span>
-        <img src={getPortraitSrc(props.index)} />
+        <img
+          src={getPortraitSrc(props.index)}
+          className={cc({ pixelated: !antialiasing })}
+        />
       </p>
     </div>
   )

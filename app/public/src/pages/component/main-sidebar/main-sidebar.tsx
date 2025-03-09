@@ -24,6 +24,7 @@ import Wiki from "../wiki/wiki"
 import ServersList from "../servers/servers-list"
 
 import "./main-sidebar.css"
+import { createSelector } from "@reduxjs/toolkit"
 
 export type Page = "main_lobby" | "preparation" | "game"
 
@@ -38,6 +39,7 @@ export function MainSidebar(props: MainSidebarProps) {
   const [collapsed, setCollapsed] = useState(true)
   const navigate = useNavigate()
   const [modal, setModal] = useState<Modals>()
+  const [showSurrenderConfirm, setShowSurrenderConfirm] = useState(false)
   const changeModal = useCallback(
     (nextModal: Modals) => setModal(nextModal),
     []
@@ -74,6 +76,21 @@ export function MainSidebar(props: MainSidebarProps) {
       }
     }
   }, [])
+
+  const player = useAppSelector(state => state.game.players.find((p) => p.id === state.network.uid))
+  const playersAlive = useAppSelector(
+    createSelector(
+      [(state) => state.game.players],
+      (players) => players.filter((p) => p.life > 0)
+    )
+  )
+  function onClickLeave() {
+    if (player && player.life > 0 && playersAlive.length > 1) {
+      setShowSurrenderConfirm(true)
+    } else {
+      leave()
+    }
+  }
 
   return (
     <Sidebar collapsed={collapsed} className="sidebar" ref={sidebarRef}>
@@ -242,12 +259,33 @@ export function MainSidebar(props: MainSidebarProps) {
           </NavLink>
         )}
 
-        <NavLink svg="exit-door" className="red logout" onClick={leave}>
+        <NavLink svg="exit-door" className="red logout" onClick={onClickLeave}>
           {leaveLabel}
         </NavLink>
       </Menu>
 
       <Modals modal={modal} setModal={setModal} page={page} />
+      <Modal
+        show={showSurrenderConfirm}
+        header={t("game-surrender-modal-title")}
+        body={t("game-surrender-modal-body")}
+        onClose={() => setShowSurrenderConfirm(false)}
+        footer={
+          <>
+            <button className="bubbly green" onClick={leave}>
+              {t("yes")}
+            </button>
+            <button
+              className="bubbly red"
+              onClick={() => {
+                setShowSurrenderConfirm(false)
+              }}
+            >
+              {t("no")}
+            </button>
+          </>
+        }
+      ></Modal>
     </Sidebar>
   )
 }

@@ -24,6 +24,7 @@ precomputedPokemons.forEach((pokemon) => {
     range: pokemon.range,
     types: values(pokemon.types) as Synergy[],
     evolution: pokemon.evolution === Pkm.DEFAULT ? null : pokemon.evolution,
+    evolutions: pokemon.evolutions,
     stages:
       pokemon.stages ??
       Math.max(
@@ -39,12 +40,12 @@ export const PRECOMPUTED_POKEMONS_DATA = mapToObj(data) as {
   [pkm in Pkm]?: Omit<IPokemonData, "name" | "index">
 }
 
-export const PRECOMPUTED_REGIONAL_MONS: Pkm[] = Object.values(Pkm).filter(
-  (p) => {
+export const PRECOMPUTED_REGIONAL_MONS: Pkm[] = Object.values(Pkm)
+  .filter((p) => {
     const { regional, skill, passive } = getPokemonData(p)
     return regional && (skill !== Ability.DEFAULT || passive !== Passive.NONE)
-  }
-)
+  })
+  .sort((a, b) => getPokemonData(a).stars - getPokemonData(b).stars)
 
 console.timeEnd("precompute-pokemon-data")
 
@@ -65,6 +66,7 @@ export function getPokemonData(name: Pkm): IPokemonData {
     skill: Ability.DEFAULT,
     passive: Passive.NONE,
     types: [],
-    evolution: null
+    evolution: null,
+    evolutions: []
   }
 }

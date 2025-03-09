@@ -1,17 +1,9 @@
 import { Dispatcher } from "@colyseus/command"
-import {
-  Client,
-  IRoomListingData,
-  Room,
-  RoomListingData,
-  matchMaker,
-  subscribeLobby
-} from "colyseus"
+import { Client, IRoomCache, Room, matchMaker, subscribeLobby } from "colyseus"
 import { CronJob } from "cron"
 import admin from "firebase-admin"
 import Message from "../models/colyseus-models/message"
 import { TournamentSchema } from "../models/colyseus-models/tournament"
-import BannedUser from "../models/mongo-models/banned-user"
 import { IBot } from "../models/mongo-models/bot-v2"
 import ChatV2 from "../models/mongo-models/chat-v2"
 import Tournament from "../models/mongo-models/tournament"
@@ -50,6 +42,7 @@ import {
   JoinOrOpenRoomCommand,
   NextTournamentStageCommand,
   OnCreateTournamentCommand,
+  DeleteRoomCommand,
   OnJoinCommand,
   OnLeaveCommand,
   OnNewMessageCommand,
@@ -58,16 +51,17 @@ import {
   OpenBoosterCommand,
   ParticipateInTournamentCommand,
   RemoveMessageCommand,
-  RemoveTournamentCommand,
+  DeleteTournamentCommand,
   SelectLanguageCommand,
-  UnbanUserCommand
+  UnbanUserCommand,
+  RemakeTournamentLobbyCommand
 } from "./commands/lobby-commands"
 import LobbyState from "./states/lobby-state"
 
 export default class CustomLobbyRoom extends Room<LobbyState> {
   bots: Map<string, IBot> = new Map<string, IBot>()
   unsubscribeLobby: (() => void) | undefined
-  rooms: IRoomListingData[] | undefined
+  rooms: IRoomCache[] | undefined
   dispatcher: Dispatcher<this>
   tournamentCronJobs: Map<string, CronJob> = new Map<string, CronJob>()
   cleanUpCronJobs: CronJob[] = []
@@ -89,7 +83,7 @@ export default class CustomLobbyRoom extends Room<LobbyState> {
     }
   }
 
-  addRoom(roomId: string, data: IRoomListingData) {
+  addRoom(roomId: string, data: IRoomCache) {
     // append room listing data
     this.rooms?.push(data)
 
@@ -98,7 +92,7 @@ export default class CustomLobbyRoom extends Room<LobbyState> {
     })
   }
 
-  changeRoom(index: number, roomId: string, data: IRoomListingData) {
+  changeRoom(index: number, roomId: string, data: IRoomCache) {
     if (this.rooms) {
       const previousData = this.rooms[index]
 
@@ -162,6 +156,15 @@ export default class CustomLobbyRoom extends Room<LobbyState> {
       }
     )
 
+    this.onMessage(Transfer.DELETE_ROOM, (client, roomId) => {
+      logger.info(Transfer.DELETE_ROOM, this.roomName)
+      try {
+        this.dispatcher.dispatch(new DeleteRoomCommand(), { client, roomId })
+      } catch (error) {
+        logger.error(error)
+      }
+    })
+
     this.onMessage(
       Transfer.SELECT_LANGUAGE,
       async (client, message: Language) => {
@@ -216,9 +219,9 @@ export default class CustomLobbyRoom extends Room<LobbyState> {
     )
 
     this.onMessage(
-      Transfer.REMOVE_TOURNAMENT,
+      Transfer.DELETE_TOURNAMENT,
       (client, message: { id: string }) => {
-        this.dispatcher.dispatch(new RemoveTournamentCommand(), {
+        this.dispatcher.dispatch(new DeleteTournamentCommand(), {
           client,
           tournamentId: message.id
         })
@@ -226,12 +229,34 @@ export default class CustomLobbyRoom extends Room<LobbyState> {
     )
 
     this.onMessage(
-      Transfer.REMAKE_TOURNAMENT_LOBBIES,
-      (client, message: { id: string }) => {
-        this.dispatcher.dispatch(new CreateTournamentLobbiesCommand(), {
-          client,
-          tournamentId: message.id
-        })
+      Transfer.REMAKE_TOURNAMENT_LOBBY,
+      async (client, message: { tournamentId: string; bracketId: string }) => {
+        if (message.bracketId === "all") {
+          // delete all ongoing games
+          await this.dispatcher.dispatch(new DeleteRoomCommand(), {
+            client,
+            tournamentId: message.tournamentId,
+            bracketId: message.bracketId
+          })
+          this.dispatcher.dispatch(new CreateTournamentLobbiesCommand(), {
+            client,
+            tournamentId: message.tournamentId
+          })
+        } else {
+          // delete ongoing game
+          await this.dispatcher.dispatch(new DeleteRoomCommand(), {
+            client,
+            tournamentId: message.tournamentId,
+            bracketId: message.bracketId
+          })
+
+          // recreate lobby
+          this.dispatcher.dispatch(new RemakeTournamentLobbyCommand(), {
+            client,
+            tournamentId: message.tournamentId,
+            bracketId: message.bracketId
+          })
+        }
       }
     )
 
@@ -427,10 +452,8 @@ export default class CustomLobbyRoom extends Room<LobbyState> {
 
   async onJoin(client: Client, options: any, auth: any) {
     const user = await UserMetadata.findOne({ uid: client.auth.uid })
-    const isBanned = await BannedUser.findOne({ uid: client.auth.uid })
-
     try {
-      if (isBanned) {
+      if (user?.banned) {
         throw new Error("Account banned")
       } else if (
         (this.state.ccu > MAX_CONCURRENT_PLAYERS_ON_SERVER ||
@@ -635,8 +658,8 @@ export default class CustomLobbyRoom extends Room<LobbyState> {
           logger.debug("checking inactive users")
           this.clients.forEach((c) => {
             if (
-              c.userData.joinedAt &&
-              c.userData.joinedAt < Date.now() - INACTIVITY_TIMEOUT
+              c.userData?.joinedAt &&
+              c.userData?.joinedAt < Date.now() - INACTIVITY_TIMEOUT
             ) {
               //logger.info("disconnected user for inactivity", c.id)
               c.leave(CloseCodes.USER_INACTIVE)

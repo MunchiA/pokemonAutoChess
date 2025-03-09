@@ -1,10 +1,11 @@
 import Player from "../models/colyseus-models/player"
 import { Pokemon, PokemonClasses } from "../models/colyseus-models/pokemon"
 import PokemonFactory from "../models/pokemon-factory"
+import { IPlayer } from "../types"
 import { EvolutionTime } from "../types/Config"
 import { Ability } from "../types/enum/Ability"
 import { PokemonActionState } from "../types/enum/Game"
-import { ItemComponents, Item, ShinyItems } from "../types/enum/Item"
+import { Item, ItemComponents, ShinyItems } from "../types/enum/Item"
 import { Passive } from "../types/enum/Passive"
 import { Pkm } from "../types/enum/Pokemon"
 import { sum } from "../utils/array"
@@ -14,7 +15,7 @@ import { values } from "../utils/schemas"
 
 type DivergentEvolution = (
   pokemon: Pokemon,
-  player: Player,
+  player: IPlayer,
   ...additionalArgs: unknown[]
 ) => Pkm
 
@@ -35,7 +36,7 @@ export abstract class EvolutionRule {
 
   getEvolution(
     pokemon: Pokemon,
-    player: Player,
+    player: IPlayer,
     ...additionalArgs: unknown[]
   ): Pkm {
     if (this.divergentEvolution) {
@@ -80,31 +81,25 @@ export class CountEvolutionRule extends EvolutionRule {
 
   constructor(
     numberRequired: number,
-    divergentEvolution?: (pokemon: Pokemon, player: Player) => Pkm
+    divergentEvolution?: (pokemon: Pokemon, player: IPlayer) => Pkm
   ) {
     super(divergentEvolution)
     this.numberRequired = numberRequired
   }
 
   canEvolve(pokemon: Pokemon, player: Player, stageLevel: number): boolean {
-    const copies = values(player.board).filter((p) => p.index === pokemon.index)
-    if (
-      pokemon.evolution === Pkm.DEFAULT ||
-      copies.some((p) => p.items.has(Item.EVIOLITE))
-    ) {
-      return false
-    }
+    if (!pokemon.hasEvolution) return false
+    const copies = values(player.board).filter(
+      (p) => p.index === pokemon.index && !p.items.has(Item.EVIOLITE)
+    )
     return copies.length >= this.numberRequired
   }
 
   canEvolveIfBuyingOne(pokemon: Pokemon, player: Player): boolean {
-    const copies = values(player.board).filter((p) => p.index === pokemon.index)
-    if (
-      pokemon.evolution === Pkm.DEFAULT ||
-      copies.some((p) => p.items.has(Item.EVIOLITE))
-    ) {
-      return false
-    }
+    if (!pokemon.hasEvolution) return false
+    const copies = values(player.board).filter(
+      (p) => p.index === pokemon.index && !p.items.has(Item.EVIOLITE)
+    )
     return copies.length >= this.numberRequired - 1
   }
 
@@ -117,7 +112,11 @@ export class CountEvolutionRule extends EvolutionRule {
     const pokemonsBeforeEvolution: Pokemon[] = []
 
     player.board.forEach((pkm, id) => {
-      if (pkm.index == pokemon.index) {
+      if (
+        pkm.index == pokemon.index &&
+        !pkm.items.has(Item.EVIOLITE) &&
+        pokemonsBeforeEvolution.length < this.numberRequired
+      ) {
         // logger.debug(pkm.name, pokemon.name)
         if (coord) {
           if (pkm.positionY > coord.y) {
@@ -206,7 +205,9 @@ export class ItemEvolutionRule extends EvolutionRule {
 
   canEvolve(pokemon: Pokemon, player: Player, stageLevel: number): boolean {
     if (pokemon.items.has(Item.EVIOLITE)) return false
-    const itemEvolution = values(pokemon.items).find((item) =>
+    const items = values(pokemon.items)
+    pokemon.meal !== "" && items.push(pokemon.meal)
+    const itemEvolution = items.find((item) =>
       this.itemsTriggeringEvolution.includes(item)
     )
 
@@ -335,5 +336,6 @@ export function carryOverPermanentStats(
   if (existingTms.length > 0) {
     pokemonEvolved.tm = pickRandomIn(existingTms)
     pokemonEvolved.skill = pokemonEvolved.tm
+    pokemonEvolved.maxPP = 100
   }
 }

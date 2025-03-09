@@ -1,15 +1,16 @@
-import { Client, Room } from "colyseus.js"
+import { Client, getStateCallbacks, Room } from "colyseus.js"
 import firebase from "firebase/compat/app"
 import React, { useEffect, useRef, useState } from "react"
 import { Navigate } from "react-router-dom"
 import AfterGameState from "../../../rooms/states/after-game-state"
 import { useAppDispatch, useAppSelector } from "../hooks"
-import { preferences } from "../preferences"
+import { preference } from "../preferences"
 import {
   addPlayer,
   leaveAfter,
   setElligibilityToELO,
-  setElligibilityToXP
+  setElligibilityToXP,
+  setGameMode
 } from "../stores/AfterGameStore"
 import { joinAfter, logIn } from "../stores/NetworkStore"
 import AfterMenu from "./component/after/after-menu"
@@ -72,20 +73,25 @@ export default function AfterGame() {
       })
     }
 
-    const initialize = async (r: Room<AfterGameState>) => {
+    const initialize = async (room: Room<AfterGameState>) => {
       localStore.delete(LocalStoreKeys.RECONNECTION_GAME)
-      localStore.set(LocalStoreKeys.RECONNECTION_AFTER_GAME, { reconnectionToken: r.reconnectionToken, roomId: r.roomId }, 30)
-      r.state.players.onAdd((player) => {
+      localStore.set(LocalStoreKeys.RECONNECTION_AFTER_GAME, { reconnectionToken: room.reconnectionToken, roomId: room.roomId }, 30)
+      const $ = getStateCallbacks(room)
+      const $state = $(room.state)
+      $state.players.onAdd((player) => {
         dispatch(addPlayer(player))
         if (player.id === currentPlayerId) {
-          playSound(SOUNDS["FINISH" + player.rank], preferences.musicVolume / 100)
+          playSound(SOUNDS["FINISH" + player.rank], preference("musicVolume") / 100)
         }
       })
-      r.state.listen("elligibleToELO", (value, previousValue) => {
+      $state.listen("elligibleToELO", (value, previousValue) => {
         dispatch(setElligibilityToELO(value))
       })
-      r.state.listen("elligibleToXP", (value, previousValue) => {
+      $state.listen("elligibleToXP", (value, previousValue) => {
         dispatch(setElligibilityToXP(value))
+      })
+      $state.listen("gameMode", (value, previousValue) => {
+        dispatch(setGameMode(value))
       })
     }
 

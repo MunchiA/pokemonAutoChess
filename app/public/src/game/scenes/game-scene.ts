@@ -21,14 +21,14 @@ import {
 import { GamePhaseState } from "../../../../types/enum/Game"
 import { Item, ItemRecipe } from "../../../../types/enum/Item"
 import { Pkm } from "../../../../types/enum/Pokemon"
-import { SpecialGameRule } from "../../../../types/enum/SpecialGameRule"
+import { throttle } from "../../../../utils/function"
 import { logger } from "../../../../utils/logger"
 import { values } from "../../../../utils/schemas"
 import { clearTitleNotificationIcon } from "../../../../utils/window"
 import { getGameContainer } from "../../pages/game"
 import { SOUNDS, playMusic, playSound } from "../../pages/utils/audio"
 import { transformCoordinate } from "../../pages/utils/utils"
-import { loadPreferences, preferences } from "../../preferences"
+import { preference } from "../../preferences"
 import AnimationManager from "../animation-manager"
 import BattleManager from "../components/battle-manager"
 import BoardManager from "../components/board-manager"
@@ -40,6 +40,7 @@ import PokemonSprite from "../components/pokemon"
 import { SellZone } from "../components/sell-zone"
 import UnownManager from "../components/unown-manager"
 import WeatherManager from "../components/weather-manager"
+import { DEPTH } from "../depths"
 
 export default class GameScene extends Scene {
   tilemaps: Map<DungeonPMDO, DesignTiled> = new Map<DungeonPMDO, DesignTiled>()
@@ -148,13 +149,16 @@ export default class GameScene extends Scene {
       )
 
       this.weatherManager = new WeatherManager(this)
+      this.weatherManager?.setTownDaytime(0)
+
       this.unownManager = new UnownManager(this)
-      playSound(SOUNDS.CAROUSEL_UNLOCK) // playing a preloaded sound for players who tabbed out during loading
-      playMusic(
-        this,
-        DungeonDetails[player.map].music ?? DungeonMusic.RANDOM_DUNGEON_1
-      )
-      ;(this.sys as any).animatedTiles.init(this.map)
+      if (!this.music) {
+        playMusic(
+          this,
+          DungeonDetails[player.map].music ?? DungeonMusic.TREASURE_TOWN
+        )
+      }
+      //;(this.sys as any).animatedTiles.init(this.map)
       clearTitleNotificationIcon()
     }
   }
@@ -165,7 +169,7 @@ export default class GameScene extends Scene {
       this.lastPokemonDetail.updateTooltipPosition()
     }
     if (
-      this.room?.state?.phase === GamePhaseState.MINIGAME &&
+      this.room?.state?.phase === GamePhaseState.TOWN &&
       this.minigameManager
     ) {
       this.minigameManager.update()
@@ -173,25 +177,25 @@ export default class GameScene extends Scene {
   }
 
   registerKeys() {
-    const preferences = loadPreferences()
+    const keybindings = preference("keybindings")
     this.input.keyboard!.removeAllListeners()
     this.input.keyboard!.on(
-      "keydown-" + preferences.keybindings.refresh,
-      () => {
+      "keydown-" + keybindings.refresh,
+      throttle(() => {
         playSound(SOUNDS.REFRESH, 0.5)
         this.refreshShop()
-      }
+      }, 300)
     )
 
-    this.input.keyboard!.on("keydown-" + preferences.keybindings.lock, () => {
+    this.input.keyboard!.on("keydown-" + keybindings.lock, () => {
       this.room?.send(Transfer.LOCK)
     })
 
-    this.input.keyboard!.on("keydown-" + preferences.keybindings.buy_xp, () => {
+    this.input.keyboard!.on("keydown-" + keybindings.buy_xp, () => {
       this.buyExperience()
     })
 
-    this.input.keyboard!.on("keydown-" + preferences.keybindings.sell, (e) => {
+    this.input.keyboard!.on("keydown-" + keybindings.sell, (e) => {
       if (this.pokemonDragged != null) return
       if (this.shopIndexHovered !== null) {
         this.removeFromShop(this.shopIndexHovered)
@@ -210,7 +214,7 @@ export default class GameScene extends Scene {
       }
     })
 
-    this.input.keyboard!.on("keydown-" + preferences.keybindings.switch, () => {
+    this.input.keyboard!.on("keydown-" + keybindings.switch, () => {
       if (this.pokemonHovered) {
         this.switchBetweenBenchAndBoard(this.pokemonHovered)
       }
@@ -249,15 +253,15 @@ export default class GameScene extends Scene {
     this.weatherManager?.clearWeather()
     this.resetDragState()
 
-    if (previousPhase === GamePhaseState.MINIGAME) {
+    if (previousPhase === GamePhaseState.TOWN) {
       this.minigameManager?.dispose()
     }
 
     if (newPhase === GamePhaseState.FIGHT) {
       this.board?.battleMode()
-    } else if (newPhase === GamePhaseState.MINIGAME) {
+    } else if (newPhase === GamePhaseState.TOWN) {
       this.board?.minigameMode()
-      this.minigameManager?.initialize()
+      this.weatherManager?.setTownDaytime(this.room?.state.stageLevel ?? 0)
     } else {
       this.board?.pickMode()
     }
@@ -283,7 +287,20 @@ export default class GameScene extends Scene {
     )
   }
 
-  async setMap(mapName: DungeonPMDO) {
+  async setMap(mapName: DungeonPMDO | "town") {
+    if (mapName === "town") {
+      this.map = this.add.tilemap("town")
+      const tileset = this.map.addTilesetImage("town_tileset", "town_tileset")!
+      this.map.createLayer("layer0", tileset, 0, 0)?.setScale(2, 2)
+      this.map.createLayer("layer1", tileset, 0, 0)?.setScale(2, 2)
+      this.map.createLayer("layer2", tileset, 0, 0)?.setScale(2, 2)
+      const sys = this.sys as any
+      if (sys.animatedTiles) {
+        sys.animatedTiles.pause()
+      }
+      return
+    }
+
     const tilemap = this.tilemaps.get(mapName)
     if (!tilemap)
       return logger.error(`Tilemap not yet loaded for map ${mapName}`)
@@ -301,7 +318,7 @@ export default class GameScene extends Scene {
     const sys = this.sys as any
     if (sys.animatedTiles) {
       sys.animatedTiles.init(map)
-      if (preferences.disableAnimatedTilemap) {
+      if (preference("disableAnimatedTilemap")) {
         sys.animatedTiles.pause()
       }
     }
@@ -342,7 +359,7 @@ export default class GameScene extends Scene {
           .image(zone.x, zone.y, "cell", 0)
           .setVisible(false)
           .setData({ x, y })
-          .setDepth(2)
+          .setDepth(DEPTH.DROP_ZONE)
         zone.setData({ x, y, sprite: spotSprite })
         this.dropSpots.push(spotSprite)
       }
@@ -351,7 +368,7 @@ export default class GameScene extends Scene {
     this.input.on("pointerdown", (pointer) => {
       if (
         this.minigameManager &&
-        this.room?.state.phase === GamePhaseState.MINIGAME &&
+        this.room?.state.phase === GamePhaseState.TOWN &&
         !this.spectate
       ) {
         const vector = this.minigameManager.getVector(pointer.x, pointer.y)
@@ -363,7 +380,7 @@ export default class GameScene extends Scene {
           "attacks",
           `WATER/cell/000.png`
         )
-        clickAnimation.setDepth(7)
+        clickAnimation.setDepth(DEPTH.INDICATOR)
         clickAnimation.anims.play("WATER/cell")
         this.tweens.add({
           targets: clickAnimation,
@@ -406,6 +423,7 @@ export default class GameScene extends Scene {
       (pointer, gameObject: Phaser.GameObjects.GameObject) => {
         if (gameObject instanceof PokemonSprite) {
           this.pokemonDragged = gameObject
+          this.pokemonDragged.setDepth(DEPTH.POKEMON_GRABBED)
           this.dropSpots.forEach((spot) => {
             if (
               this.room?.state.phase === GamePhaseState.PICK ||
@@ -507,6 +525,7 @@ export default class GameScene extends Scene {
             )
             gameObject.setPosition(x, y)
           }
+          gameObject.setDepth(DEPTH.POKEMON)
           this.pokemonDragged = null
         } else if (
           gameObject instanceof ItemContainer &&
@@ -631,6 +650,7 @@ export default class GameScene extends Scene {
 
   setHovered(gameObject: PokemonSprite) {
     const outline = <OutlinePlugin>this.plugins.get("rexOutline")
+    if (!outline) return // outline plugin doesnt work with canvas renderer
     if (this.pokemonHovered != null) this.clearHovered(this.pokemonHovered)
     this.pokemonHovered = gameObject
 
@@ -646,6 +666,7 @@ export default class GameScene extends Scene {
 
   clearHovered(gameObject: PokemonSprite) {
     const outline = <OutlinePlugin>this.plugins.get("rexOutline")
+    if (!outline) return // outline plugin doesnt work with canvas renderer
     outline.remove(gameObject.sprite)
   }
 }

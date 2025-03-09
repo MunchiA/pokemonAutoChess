@@ -26,6 +26,7 @@ import {
   SpriteType,
   type Team
 } from "../../../../types/enum/Game"
+import { Item } from "../../../../types/enum/Item"
 import type { Passive } from "../../../../types/enum/Passive"
 import { AnimationConfig, Pkm } from "../../../../types/enum/Pokemon"
 import type { Synergy } from "../../../../types/enum/Synergy"
@@ -33,7 +34,7 @@ import { clamp, min } from "../../../../utils/number"
 import { chance } from "../../../../utils/random"
 import { values } from "../../../../utils/schemas"
 import { transformAttackCoordinate } from "../../pages/utils/utils"
-import { preferences } from "../../preferences"
+import { preference } from "../../preferences"
 import type { DebugScene } from "../scenes/debug-scene"
 import type GameScene from "../scenes/game-scene"
 import { displayAbility } from "./abilities-animations"
@@ -41,8 +42,12 @@ import DraggableObject from "./draggable-object"
 import ItemsContainer from "./items-container"
 import Lifebar from "./life-bar"
 import PokemonDetail from "./pokemon-detail"
-import type { PokemonSpecialDetail } from "./pokemon-special-detail"
+import type { GameDialog } from "./game-dialog"
 import PowerBar from "./power-bar"
+import { DEPTH } from "../depths"
+import { logger } from "../../../../utils/logger"
+
+const spriteCountPerPokemon = new Map<string, number>()
 
 export default class PokemonSprite extends DraggableObject {
   evolution: Pkm
@@ -58,7 +63,7 @@ export default class PokemonSprite extends DraggableObject {
   def: number
   speDef: number
   attackType: AttackType
-  atkSpeed: number
+  speed: number
   targetX: number | null
   targetY: number | null
   skill: Ability
@@ -79,7 +84,7 @@ export default class PokemonSprite extends DraggableObject {
   rangeType: string
   types = new Set<Synergy>()
   lifebar: Lifebar | undefined
-  detail: PokemonDetail | PokemonSpecialDetail | null = null
+  detail: PokemonDetail | GameDialog | null = null
   pp: number | undefined
   maxPP: number
   luck: number
@@ -117,11 +122,15 @@ export default class PokemonSprite extends DraggableObject {
   curseFate: GameObjects.Sprite | undefined
   light: GameObjects.Sprite | undefined
   stars: number
+  stages: number
   playerId: string
   shouldShowTooltip: boolean
   flip: boolean
   animationLocked: boolean /* will prevent another anim to play before current one is completed */ = false
   skydiving: boolean = false
+  meal: Item | "" = ""
+  mealSprite: GameObjects.Sprite | undefined
+  inBattle: boolean = false
 
   constructor(
     scene: GameScene | DebugScene,
@@ -137,6 +146,7 @@ export default class PokemonSprite extends DraggableObject {
     this.playerId = playerId
     this.shouldShowTooltip = true
     this.stars = pokemon.stars
+    this.stages = getPokemonData(pokemon.name).stages
     this.evolution = instanceofPokemonEntity(pokemon)
       ? Pkm.DEFAULT
       : (pokemon as IPokemon).evolution
@@ -157,7 +167,7 @@ export default class PokemonSprite extends DraggableObject {
     this.attackType = pokemon.attackType
     this.types = new Set(values(pokemon.types))
     this.maxPP = pokemon.maxPP
-    this.atkSpeed = pokemon.atkSpeed
+    this.speed = pokemon.speed
     this.targetX = null
     this.targetY = null
     this.skill = pokemon.skill
@@ -167,6 +177,7 @@ export default class PokemonSprite extends DraggableObject {
     this.attackSprite = pokemon.attackSprite
     this.ap = pokemon.ap
     this.luck = pokemon.luck
+    this.inBattle = inBattle
     if (this.range > 1) {
       this.rangeType = "range"
     } else {
@@ -177,6 +188,8 @@ export default class PokemonSprite extends DraggableObject {
       speed: 300,
       rotateToTarget: false
     })
+
+    this.lazyloadAnimations(scene)
 
     const p = <IPokemonEntity>pokemon
     if (p.orientation) {
@@ -197,12 +210,11 @@ export default class PokemonSprite extends DraggableObject {
     )
     const baseHP = getPokemonData(pokemon.name).hp
     const sizeBuff = (pokemon.hp - baseHP) / baseHP
-    this.sprite.setScale(2 + sizeBuff).setDepth(3)
+    this.sprite.setScale(2 + sizeBuff).setDepth(DEPTH.POKEMON)
     this.sprite.on(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       this.animationLocked = false
-      const g = <GameScene>scene
       // go back to idle anim if no more animation in queue
-      g.animationManager?.animatePokemon(this, pokemon.action, this.flip)
+      scene.animationManager?.animatePokemon(this, pokemon.action, this.flip)
     })
     this.height = this.sprite.height
     this.width = this.sprite.width
@@ -217,7 +229,7 @@ export default class PokemonSprite extends DraggableObject {
     const hasShadow = AnimationConfig[pokemon.name]?.noShadow !== true
     if (hasShadow) {
       this.shadow = new GameObjects.Sprite(scene, 0, 5, textureIndex)
-      this.shadow.setScale(2, 2).setDepth(2)
+      this.shadow.setScale(2, 2).setDepth(DEPTH.POKEMON_SHADOW)
       this.add(this.shadow)
     }
     this.add(this.sprite)
@@ -238,6 +250,10 @@ export default class PokemonSprite extends DraggableObject {
       if (p.status.fairyField) {
         this.addFairyField()
       }
+    } else {
+      if (pokemon.items.has(Item.SHINY_STONE)) {
+        this.addLight()
+      }
     }
     this.add(this.itemsContainer)
 
@@ -245,6 +261,10 @@ export default class PokemonSprite extends DraggableObject {
       this.setLifeBar(p, scene)
       if (pokemon.maxPP > 0) this.setPowerBar(p, scene)
       //this.setEffects(p, scene);
+    } else {
+      if (pokemon.meal !== "") {
+        this.updateMeal(pokemon.meal)
+      }
     }
 
     this.draggable = playerId === scene.uid && !inBattle
@@ -255,14 +275,12 @@ export default class PokemonSprite extends DraggableObject {
       this.shield = p.shield
       this.life = p.life
       this.critPower = p.critPower
-      this.ap = p.ap
       this.critChance = p.critChance
     } else {
       this.critPower = DEFAULT_CRIT_POWER
-      this.ap = 0
       this.critChance = DEFAULT_CRIT_CHANCE
     }
-    this.setDepth(5)
+    this.setDepth(DEPTH.POKEMON)
 
     // prevents persisting details between game transitions
     const s = <GameScene>this.scene
@@ -272,9 +290,34 @@ export default class PokemonSprite extends DraggableObject {
     }
   }
 
+  lazyloadAnimations(
+    scene: GameScene | DebugScene | undefined,
+    unload: boolean = false
+  ) {
+    const tint = this.shiny ? PokemonTint.SHINY : PokemonTint.NORMAL
+    const pokemonSpriteKey = `${this.index}/${tint}`
+    let spriteCount = spriteCountPerPokemon.get(pokemonSpriteKey) ?? 0
+    if (unload) {
+      spriteCount = min(0)(spriteCount - 1)
+      if (spriteCount === 0 && scene?.animationManager) {
+        //logger.debug("unloading anims for", this.index)
+        scene.animationManager?.unloadPokemonAnimations(this.index, tint)
+      }
+    } else {
+      scene?.animationManager
+      if (spriteCount === 0 && scene?.animationManager) {
+        //logger.debug("loading anims for", this.index)
+        scene.animationManager?.createPokemonAnimations(this.index, tint)
+      }
+      spriteCount++
+    }
+    //logger.debug("sprite count for", this.index, spriteCount)
+    spriteCountPerPokemon.set(pokemonSpriteKey, spriteCount)
+  }
+
   updateTooltipPosition() {
     if (this.detail) {
-      if (this.input && preferences.showDetailsOnHover) {
+      if (this.input && preference("showDetailsOnHover")) {
         this.detail.setPosition(
           this.input.localX + 200,
           min(0)(this.input.localY - 175)
@@ -297,8 +340,10 @@ export default class PokemonSprite extends DraggableObject {
   }
 
   destroy(fromScene?: boolean | undefined): void {
+    const g = <GameScene>this.scene
     super.destroy(fromScene)
     this.closeDetail()
+    this.lazyloadAnimations(g, true)
   }
 
   closeDetail() {
@@ -327,7 +372,7 @@ export default class PokemonSprite extends DraggableObject {
       this.def,
       this.speDef,
       this.range,
-      this.atkSpeed,
+      this.speed,
       this.critChance,
       this.critPower,
       this.ap,
@@ -340,23 +385,30 @@ export default class PokemonSprite extends DraggableObject {
       this.shiny,
       this.index,
       this.stars,
-      this.evolution
+      getPokemonData(this.name as Pkm).stages,
+      this.evolution,
+      this.inBattle
     )
-    this.detail.setPosition(
-      this.detail.width / 2 + 40,
-      min(0)(-this.detail.height / 2 - 40)
-    )
+    this.detail
+      .setPosition(
+        this.detail.width / 2 + 40,
+        min(0)(-this.detail.height / 2 - 40)
+      )
+      .setDepth(DEPTH.TOOLTIP)
 
     this.detail.removeInteractive()
     this.add(this.detail)
     s.lastPokemonDetail = this
   }
 
-  onPointerDown(pointer: Phaser.Input.Pointer) {
-    super.onPointerDown(pointer)
+  onPointerDown(
+    pointer: Phaser.Input.Pointer,
+    event: Phaser.Types.Input.EventData
+  ) {
+    super.onPointerDown(pointer, event)
     if (
       this.shouldShowTooltip &&
-      !preferences.showDetailsOnHover &&
+      !preference("showDetailsOnHover") &&
       pointer.rightButtonDown() &&
       this.scene &&
       !this.detail
@@ -371,7 +423,7 @@ export default class PokemonSprite extends DraggableObject {
     super.onPointerUp()
     if (
       this.shouldShowTooltip &&
-      preferences.showDetailsOnHover &&
+      preference("showDetailsOnHover") &&
       !this.detail
     ) {
       this.openDetail()
@@ -380,7 +432,7 @@ export default class PokemonSprite extends DraggableObject {
 
   onPointerOut(): void {
     super.onPointerOut()
-    if (this.shouldShowTooltip && preferences.showDetailsOnHover) {
+    if (this.shouldShowTooltip && preference("showDetailsOnHover")) {
       this.closeDetail()
     }
   }
@@ -389,7 +441,7 @@ export default class PokemonSprite extends DraggableObject {
     super.onPointerOver(pointer)
 
     if (
-      preferences.showDetailsOnHover &&
+      preference("showDetailsOnHover") &&
       this.shouldShowTooltip &&
       this.detail == null &&
       !pointer.leftButtonDown() // we're dragging another pokemon
@@ -428,7 +480,7 @@ export default class PokemonSprite extends DraggableObject {
       projectile
         .setScale(scale[0], scale[1])
         .setTint(tint)
-        .setDepth(6)
+        .setDepth(DEPTH.PROJECTILE)
         .setVisible(false)
 
       if (!isRange) {
@@ -493,7 +545,7 @@ export default class PokemonSprite extends DraggableObject {
     }
 
     const resurectAnim = this.scene.add.sprite(0, -10, "RESURECT", "000")
-    resurectAnim.setDepth(7)
+    resurectAnim.setDepth(DEPTH.BOOST_FRONT)
     resurectAnim.setScale(2, 2)
     resurectAnim.anims.play("RESURECT")
     resurectAnim.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
@@ -560,6 +612,46 @@ export default class PokemonSprite extends DraggableObject {
     )
   }
 
+  cookAnimation(dishes: Item[]) {
+    this.emoteAnimation()
+    dishes.forEach((item, i) => {
+      const itemSprite = this.scene.add.sprite(
+        this.x,
+        this.y,
+        "item",
+        item + ".png"
+      )
+      itemSprite.setScale(0.5)
+      const shinyEffect = this.scene.add.sprite(this.x, this.y, "shine")
+      shinyEffect.setScale(2)
+      shinyEffect.play("shine")
+      this.scene.tweens.add({
+        targets: [itemSprite, shinyEffect],
+        ease: Phaser.Math.Easing.Quadratic.Out,
+        duration: 1000,
+        y: this.y - 70,
+        x: this.x + (i - (dishes.length - 1) / 2) * 70,
+        onComplete: () => {
+          setTimeout(() => {
+            itemSprite.destroy()
+            shinyEffect.destroy()
+          }, 1000)
+        }
+      })
+    })
+  }
+
+  updateMeal(meal: Item | "") {
+    this.meal = meal
+    this.mealSprite?.destroy()
+    if (meal) {
+      this.mealSprite = this.scene.add
+        .sprite(0, 20, "item", meal + ".png")
+        .setScale(0.25)
+      this.add(this.mealSprite)
+    }
+  }
+
   specialAttackAnimation(group: Phaser.GameObjects.Group, ultCount: number) {
     if (this.skill && this.skill === Ability.GROWTH) {
       this.sprite.setScale(2 + 0.5 * ultCount)
@@ -580,6 +672,7 @@ export default class PokemonSprite extends DraggableObject {
       )
       this.lifebar.setAmount(pokemon.life)
       this.lifebar.setShieldAmount(pokemon.shield)
+      this.lifebar.setDepth(DEPTH.POKEMON_HP_BAR)
       this.add(this.lifebar)
     }
   }
@@ -594,6 +687,7 @@ export default class PokemonSprite extends DraggableObject {
         pokemon.maxPP
       )
       this.powerbar.setAmount(pokemon.pp)
+      this.powerbar.setDepth(DEPTH.POKEMON_HP_BAR)
       this.add(this.powerbar)
     }
   }
@@ -772,7 +866,7 @@ export default class PokemonSprite extends DraggableObject {
     if (!this.blinded) {
       this.blinded = this.scene.add
         .sprite(0, -30, "status", "BLINDED/000.png")
-        .setScale(2)
+        .setScale(3)
       this.blinded.anims.play("BLINDED")
       this.add(this.blinded)
     }
@@ -788,9 +882,9 @@ export default class PokemonSprite extends DraggableObject {
   addArmorReduction() {
     if (!this.armorReduction) {
       this.armorReduction = this.scene.add
-        .sprite(0, -40, "status", "ARMOR_REDUCTION/000.png")
+        .sprite(0, -40, "status", "ARMOR_BREAK/000.png")
         .setScale(2)
-      this.armorReduction.anims.play("ARMOR_REDUCTION")
+      this.armorReduction.anims.play("ARMOR_BREAK")
       this.add(this.armorReduction)
     }
   }
@@ -1028,6 +1122,7 @@ export default class PokemonSprite extends DraggableObject {
   }
 
   addLight() {
+    if (this.light) return
     this.light = this.scene.add
       .sprite(0, 0, "abilities", "LIGHT_CELL/000.png")
       .setScale(1.5, 1.5)
@@ -1040,7 +1135,7 @@ export default class PokemonSprite extends DraggableObject {
     if (!this.electricField) {
       this.electricField = this.scene.add
         .sprite(0, 10, "status", "ELECTRIC_FIELD/000.png")
-        .setDepth(0)
+        .setDepth(DEPTH.BOARD_EFFECT_GROUND_LEVEL)
         .setScale(1.5)
       this.electricField.anims.play("ELECTRIC_FIELD")
       this.add(this.electricField)
@@ -1059,7 +1154,7 @@ export default class PokemonSprite extends DraggableObject {
     if (!this.grassField) {
       this.grassField = this.scene.add
         .sprite(0, 10, "abilities", "GRASSY_FIELD/000.png")
-        .setDepth(0)
+        .setDepth(DEPTH.BOARD_EFFECT_GROUND_LEVEL)
         .setScale(2)
       this.scene.add.existing(this.grassField)
       this.grassField.anims.play("GRASSY_FIELD")
@@ -1079,7 +1174,7 @@ export default class PokemonSprite extends DraggableObject {
     if (!this.fairyField) {
       this.fairyField = this.scene.add
         .sprite(0, 10, "status", "FAIRY_FIELD/000.png")
-        .setDepth(0)
+        .setDepth(DEPTH.BOARD_EFFECT_GROUND_LEVEL)
         .setScale(1)
       this.fairyField.anims.play("FAIRY_FIELD")
       this.add(this.fairyField)
@@ -1098,7 +1193,7 @@ export default class PokemonSprite extends DraggableObject {
     if (!this.psychicField) {
       this.psychicField = this.scene.add
         .sprite(0, 10, "status", "PSYCHIC_FIELD/000.png")
-        .setDepth(0)
+        .setDepth(DEPTH.BOARD_EFFECT_GROUND_LEVEL)
         .setScale(1)
       this.psychicField.anims.play("PSYCHIC_FIELD")
       this.add(this.psychicField)
@@ -1116,13 +1211,19 @@ export default class PokemonSprite extends DraggableObject {
   addRageEffect() {
     this.sprite.setTint(0xff0000)
   }
+
+  removeRageEffect() {
+    this.sprite.clearTint()
+  }
 }
 
 export function addWanderingPokemon(
   scene: GameScene,
+  id: string,
   pkm: Pkm,
   onClick: (
     pokemon: PokemonSprite,
+    id: string,
     pointer: Phaser.Input.Pointer,
     tween: Phaser.Tweens.Tween
   ) => void
@@ -1170,6 +1271,6 @@ export function addWanderingPokemon(
   pokemon.draggable = false
   pokemon.sprite.setInteractive()
   pokemon.sprite.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-    onClick(pokemon, pointer, tween)
+    onClick(pokemon, id, pointer, tween)
   })
 }

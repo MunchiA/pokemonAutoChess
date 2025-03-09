@@ -3,10 +3,12 @@ import React, { useMemo } from "react"
 import ReactDOM from "react-dom/client"
 import { useTranslation } from "react-i18next"
 import { Tooltip } from "react-tooltip"
-import { ItemStats } from "../../../../types/Config"
+import { ItemStats } from "../../../../core/items"
 import { Stat } from "../../../../types/enum/Game"
 import { HMs, Item, ItemRecipe, TMs } from "../../../../types/enum/Item"
 import { addIconsToDescription } from "../../pages/utils/descriptions"
+import { cc } from "../../pages/utils/jsx"
+import { usePreferences } from "../../preferences"
 import "./item-detail.css"
 
 export function ItemDetailTooltip({
@@ -16,6 +18,7 @@ export function ItemDetailTooltip({
   item: Item
   depth?: number
 }) {
+  const [preferences] = usePreferences()
   const { t } = useTranslation()
   const recipes = useMemo(
     () =>
@@ -24,11 +27,8 @@ export function ItemDetailTooltip({
   )
 
   const formatStat = (stat: Stat, value: number) => {
-    if ([Stat.CRIT_POWER].includes(stat)) {
-      value = Math.round(value * 100)
-    }
     let output = value.toString()
-    if ([Stat.ATK_SPEED, Stat.CRIT_CHANCE, Stat.CRIT_POWER].includes(stat)) {
+    if ([Stat.CRIT_CHANCE, Stat.CRIT_POWER].includes(stat)) {
       output += "%"
     }
     if (value >= 0) {
@@ -45,11 +45,29 @@ export function ItemDetailTooltip({
 
   return (
     <div className="game-item-detail">
-      <img className="game-item-detail-icon" src={`assets/item/${getImageFilename()}.png`} />
+      <img
+        className={cc("game-item-detail-icon", {
+          pixelated: !preferences.antialiasing
+        })}
+        src={`assets/item/${getImageFilename()}.png`}
+      />
       <div className="game-item-detail-name">
-        {ItemRecipe[item] && (<div className="game-item-recipe">
-          {ItemRecipe[item]?.map((item, i) => <><img className="game-item-detail-icon" src={`assets/item/${item}.png`} key={item} />{i === 0 && ' + '}</>)}
-        </div>)}
+        {ItemRecipe[item] && (
+          <div className="game-item-recipe">
+            {ItemRecipe[item]?.map((item, i) => (
+              <React.Fragment key={`component_${i}_${item}`}>
+                <img
+                  className={cc("game-item-detail-icon", {
+                    pixelated: !preferences.antialiasing
+                  })}
+                  src={`assets/item/${item}.png`}
+                  key={item}
+                />
+                {i === 0 && " + "}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
         {t(`item.${item}`)}
       </div>
       <div className="game-item-detail-stats">

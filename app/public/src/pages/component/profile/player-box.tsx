@@ -11,6 +11,7 @@ import { getAvatarSrc } from "../../../../../utils/avatar"
 import SynergyIcon from "../icons/synergy-icon"
 import { EloBadge } from "./elo-badge"
 import { RoleBadge } from "./role-badge"
+import PokemonPortrait from "../pokemon-portrait"
 
 export default function PlayerBox(props: { user: IUserMetadata, history?: IGameRecord[] }) {
   const { t } = useTranslation()
@@ -56,14 +57,12 @@ export default function PlayerBox(props: { user: IUserMetadata, history?: IGameR
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.5em" }}>
-          <img
-            src={getAvatarSrc(props.user.avatar)}
-            className="pokemon-portrait"
-          />
+          <PokemonPortrait avatar={props.user.avatar} />
           {props.user.title && (
             <p className="player-title">{t(`title.${props.user.title}`)}</p>
           )}
           <RoleBadge role={props.user.role} />
+          {props.user.banned && <div className="badge banned">{t("banned")}</div>}
           <p
             style={{
               overflow: "hidden",
@@ -107,10 +106,9 @@ export default function PlayerBox(props: { user: IUserMetadata, history?: IGameR
         </p>
         <p>
           {favoritePokemons.map((name) => (
-            <img
+            <PokemonPortrait
               key={name}
-              src={getAvatarSrc(PkmIndex[name] + "/Normal")}
-              className="pokemon-portrait"
+              avatar={PkmIndex[name] + "/Normal"}
             />
           ))}
         </p>

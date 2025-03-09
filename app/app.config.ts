@@ -1,7 +1,14 @@
 import path from "path"
 import { monitor } from "@colyseus/monitor"
 import config from "@colyseus/tools"
-import { RedisDriver, RedisPresence, ServerOptions, matchMaker } from "colyseus"
+import {
+  Presence,
+  RedisDriver,
+  RedisPresence,
+  ServerOptions,
+  matchMaker
+} from "colyseus"
+import helmet from "helmet"
 import cors from "cors"
 import express, { ErrorRequestHandler } from "express"
 import basicAuth from "express-basic-auth"
@@ -11,9 +18,7 @@ import pkg from "../package.json"
 import { initTilemap } from "./core/design"
 import { GameRecord } from "./models/colyseus-models/game-record"
 import DetailledStatistic from "./models/mongo-models/detailled-statistic-v2"
-import ItemsStatistics from "./models/mongo-models/items-statistic"
 import Meta from "./models/mongo-models/meta"
-import PokemonsStatistics from "./models/mongo-models/pokemons-statistic-v2"
 import TitleStatistic from "./models/mongo-models/title-statistic"
 import { PRECOMPUTED_POKEMONS_PER_TYPE } from "./models/precomputed/precomputed-types"
 import AfterGameRoom from "./rooms/after-game-room"
@@ -23,8 +28,8 @@ import PreparationRoom from "./rooms/preparation-room"
 import { getBotData, getBotsList } from "./services/bots"
 import { discordService } from "./services/discord"
 import { getLeaderboard } from "./services/leaderboard"
+import { getMetaItems, getMetaPokemons } from "./services/meta"
 import { pastebinService } from "./services/pastebin"
-import { Title } from "./types"
 import {
   MAX_CONCURRENT_PLAYERS_ON_SERVER,
   MAX_POOL_CONNECTIONS_SIZE,
@@ -50,7 +55,9 @@ if (process.env.NODE_APP_INSTANCE) {
   const processNumber = Number(process.env.NODE_APP_INSTANCE || "0")
   const port = (Number(process.env.PORT) || 2567) + processNumber
   gameOptions = {
-    presence: new RedisPresence(process.env.REDIS_URI),
+    presence: new RedisPresence(
+      process.env.REDIS_URI
+    ) as Presence /* TODO: type assertion shouldnt be required, need to report that bug to colyseus */,
     driver: new RedisDriver(process.env.REDIS_URI),
     publicAddress: `${port}.${process.env.SERVER_NAME}`,
     selectProcessIdToCreateRoom: async function (
@@ -91,6 +98,47 @@ export default config({
      * Bind your custom express routes here:
      * Read more: https://expressjs.com/en/starter/basic-routing.html
      */
+
+    app.use(
+      helmet({
+        crossOriginOpenerPolicy: false, // required for firebase auth
+        contentSecurityPolicy: {
+          directives: {
+            defaultSrc: [
+              "'self'",
+              "https://*.pokemon-auto-chess.com",
+              "wss://*.pokemon-auto-chess.com",
+              "https://*.firebaseapp.com",
+              "https://apis.google.com",
+              "https://*.googleapis.com",
+              "https://*.githubusercontent.com",
+              "http://raw.githubusercontent.com",
+              "https://*.youtube.com",
+              "https://pokemon.darkatek7.com",
+              "https://eternara.site",
+              "https://www.penumbra-autochess.com",
+              "https://pokechess.com.br",
+              "https://uruwhy.online",
+              "https://koala-pac.com"
+            ],
+            scriptSrc: [
+              "'self'",
+              "'unsafe-inline'",
+              "'unsafe-eval'",
+              "https://apis.google.com",
+              "https://*.googleapis.com"
+            ],
+            imgSrc: [
+              "'self'",
+              "data:",
+              "blob:",
+              "https://www.gstatic.com",
+              "http://raw.githubusercontent.com"
+            ]
+          }
+        }
+      })
+    )
 
     app.use(((err, req, res, next) => {
       res.status(err.status).json(err)
@@ -186,13 +234,15 @@ export default config({
     })
 
     app.get("/meta/items", async (req, res) => {
-      res.set("Cache-Control", "no-cache")
-      res.send(await ItemsStatistics.find())
+      // Set Cache-Control header for 24 hours (86400 seconds)
+      res.set("Cache-Control", "max-age=86400")
+      res.send(getMetaItems())
     })
 
     app.get("/meta/pokemons", async (req, res) => {
-      res.set("Cache-Control", "no-cache")
-      res.send(await PokemonsStatistics.find())
+      // Set Cache-Control header for 24 hours (86400 seconds)
+      res.set("Cache-Control", "max-age=86400")
+      res.send(getMetaPokemons())
     })
 
     app.get("/tilemap/:map", async (req, res) => {
@@ -237,7 +287,10 @@ export default config({
     })
 
     app.get("/bots", async (req, res) => {
-      res.send(getBotsList({ withSteps: req.query.withSteps === "true" }))
+      const botsData = await getBotsList({
+        withSteps: req.query.withSteps === "true"
+      })
+      res.send(botsData)
     })
 
     app.post("/bots", async (req, res) => {
