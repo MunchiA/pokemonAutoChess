@@ -1,0 +1,42 @@
+name: Update Repository Daily
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Ejecutar el flujo de trabajo todos los días a medianoche (UTC)
+  workflow_dispatch:  # Permite ejecutar el workflow manualmente desde GitHub
+
+jobs:
+  update-repository:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Git
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Configure Git
+        run: |
+          git config --global user.name "MunchiA"
+          git config --global user.email "147060584+MunchiA@users.noreply.github.com"
+          git config --global rerere.enabled true
+
+      - name: Add Remote Upstream
+        run: |
+          git remote add upstream https://github.com/keldaanCommunity/pokemonAutoChess.git
+          git fetch upstream
+
+      - name: Merge Upstream Changes
+        run: |
+          git checkout master
+          git merge upstream/master --strategy-option ours --allow-unrelated-histories
+
+      - name: Push to Origin
+        run: |
+          git push origin master
+
+      - name: Use Secret in Workflow
+        run: |
+          echo "My secret is ${{ secrets.UPDATE }}"
