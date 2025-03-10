@@ -44,3 +44,4 @@ id_digital_ocean.pub
 /app/public/dist/server/app/public/src/assets/pokemons/durations.json
 git_auto_update.log
 .ignore
+nohup.out
