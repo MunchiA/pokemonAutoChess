@@ -20,7 +20,7 @@ module.exports = {
       "user": "root",
       "host": ["64.23.193.77", "143.198.101.153", "164.92.98.9", "161.35.234.200"],
       "ref": "origin/prod",
-      "repo": "https://github.com/MunchiA/pokemonAutoChess.git",
+      "repo": "https://github.com/keldaanCommunity/pokemonAutoChess.git",
       "path": "/home/deploy",
       "post-deploy": "npm run build"
     }

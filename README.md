@@ -1,16 +1,16 @@
 # Pokemon Auto Chess
 
-Juego sin ánimo de lucro. Para fans, por fans.
+Non profit game. For fans, by fans.
 
-## Todos los derechos son de The Pokémon Company. Pokémon Auto Chess puede detenerse en cualquier momento, cuando The Pokémon Company lo desee.
+## All rights to the Pokemon Company. Pokemon Auto Chess can stop at any time, whenever The Pokemon Company wants.
 
 [![translation badge](https://inlang.com/badge?url=github.com/keldaanCommunity/pokemonAutoChess)](https://inlang.com/editor/github.com/keldaanCommunity/pokemonAutoChess?ref=badge)
 
 ![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)
 
-Play: [https://pokemon.amunchi.net/](https://pokemon.amunchi.net/)
+Play: [https://pokemon-auto-chess.com](https://pokemon-auto-chess.com/)
 
-Source: [https://github.com/MunchiA/pokemonAutoChess](https://github.com/MunchiA/pokemonAutoChess)
+Source: [https://github.com/keldaanCommunity/pokemonAutoChess](https://github.com/keldaanCommunity/pokemonAutoChess)
 
 ## Getting started
 
@@ -141,7 +141,7 @@ You might want to have full access rights on your local version. To do so, you c
 
 ## How to deploy your own Pokemon Auto Chess
 
-See this [README](https://github.com/MunchiA/pokemonAutoChess/blob/master/deployment/README.md)
+See this [README](https://github.com/keldaanCommunity/pokemonAutoChess/blob/master/deployment/README.md)
 
 ## Internationalisation
 

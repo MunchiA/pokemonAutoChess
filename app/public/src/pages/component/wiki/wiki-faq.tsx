@@ -85,7 +85,7 @@ export default function WikiFaq() {
         <p>
           {t("faq.code_answer")},&nbsp;
           <a
-            href="https://github.com/MunchiA/pokemonAutoChess"
+            href="https://github.com/keldaanCommunity/pokemonAutoChess"
             target="_blank"
           >
             {t("faq.pull_requests")}
