@@ -30,6 +30,7 @@ import { displayBoost } from "./boosts-animations"
 import { Item } from "../../../../types/enum/Item"
 import { playMusic } from "../../pages/utils/audio"
 import { DEPTH } from "../depths"
+import { DungeonMusic } from "../../../../types/enum/Dungeon"
 
 export enum BoardMode {
   PICK = "pick",
@@ -81,7 +82,6 @@ export default class BoardManager {
     this.lightCell = null
     this.pveChest = null
     this.pveChestGroup = null
-    this.renderBoard()
 
     if (state.phase == GamePhaseState.FIGHT) {
       this.battleMode()
@@ -546,11 +546,11 @@ export default class BoardManager {
     this.mode = BoardMode.TOWN
     this.scene.setMap("town")
     if (this.state.stageLevel === PortalCarouselStages[0])
-      playMusic(this.scene, "town1")
+      playMusic(this.scene, DungeonMusic.TREASURE_TOWN_STAGE_0)
     if (this.state.stageLevel === PortalCarouselStages[1])
-      playMusic(this.scene, "town2")
+      playMusic(this.scene, DungeonMusic.TREASURE_TOWN_STAGE_10)
     if (this.state.stageLevel === PortalCarouselStages[2])
-      playMusic(this.scene, "town3")
+      playMusic(this.scene, DungeonMusic.TREASURE_TOWN_STAGE_20)
     this.hideLightCell()
     this.hideBerryTrees()
     this.pokemons.forEach((pokemon) => {

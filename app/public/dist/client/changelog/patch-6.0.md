@@ -24,6 +24,7 @@
 - Dachsbun
 - Milcery
 - Alcremie (Vanilla, Ruby, Matcha, Mint, Lemon, Salted, Ruby Swirl, Caramel Swirl, Rainbow Swirl)
+- Pecharunt
 - Wooper
 - Quagsire
 
@@ -39,6 +40,7 @@
 - Munchlax line passive changed: now also gain permanent HP by eating dishes and cooking
 - Applin line is now Dragon/Grass/Gourmet, with a new ability
 - Cherubi line is now Flora/Light/Gourmet
+- Chansey and Blissey are now Normal/Fairy/Gourmet
 - Tropius is now Grass/Gourmet/Flying; passive changed to Signature Dish
 - Shuckle is now Bug/Rock/Gourmet; passive changed to Signature Dish
 - Farfetch'd is now Flying/Gourmet/Normal
