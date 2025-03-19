@@ -1530,6 +1530,10 @@ export function displayAbility(
       addAbilitySprite(skill, coordinates, true).setScale(2)
       break
 
+    case Ability.FILET_AWAY:
+      addAbilitySprite(Ability.SHIELDS_UP, coordinates, true).setScale(2)
+      break
+
     case Ability.BRAVE_BIRD:
       addAbilitySprite(skill, coordinatesTarget, true).setScale(2)
       break
@@ -1810,7 +1814,9 @@ export function displayAbility(
       break
 
     case Ability.DIVE:
-      addAbilitySprite(skill, coordinates, true).setScale(3)
+      addAbilitySprite(skill, coordinates, true)
+        .setScale(3)
+        .setDepth(DEPTH.ABILITY_BELOW_POKEMON)
       break
 
     case Ability.SMOKE_SCREEN:

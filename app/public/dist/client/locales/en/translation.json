@@ -456,7 +456,8 @@
     "HORN_ATTACK": "Horn Attack",
     "RAZOR_LEAF": "Razor Leaf",
     "MUD_SHOT": "Mud Shot",
-    "MALIGNANT_CHAIN": "Malignant Chain"
+    "MALIGNANT_CHAIN": "Malignant Chain",
+    "FILET_AWAY": "Filet Away"
   },
   "pkm": {
     "DEFAULT": "MissingNo.",
@@ -1352,7 +1353,7 @@
     "GURDURR": "Gurdurr",
     "CONKELDURR": "Conkeldurr",
     "PILLAR_WOOD": "Pillar (Wood)",
-    "PILLAR_IRON": "Pillar (Iron)",
+    "PILLAR_IRON": "Pillar (Steel)",
     "PILLAR_CONCRETE": "Pillar (Concrete)",
     "ELGYEM": "Elgyem",
     "BEHEEYEM": "Beheeyem",
@@ -1386,7 +1387,8 @@
     "ALCREMIE_RUBY_SWIRL": "Alcremie (Ruby Swirl)",
     "ALCREMIE_CARAMEL_SWIRL": "Alcremie (Caramel Swirl)",
     "ALCREMIE_RAINBOW_SWIRL": "Alcremie (Rainbow Swirl)",
-    "PECHARUNT": "Pecharunt"
+    "PECHARUNT": "Pecharunt",
+    "VELUZA": "Veluza"
   },
   "ability_description": {
     "SOFT_BOILED": "Cure all status conditions and grant [20,40,80,SP] SHIELD to all allied Pokémon.",
@@ -1522,7 +1524,7 @@
     "DIVE": "Dive underwater and gain [15,30,60] SHIELD, then reappear in the middle of the enemy team, dealing [10,20,40,SP] SPECIAL and FREEZE all adjacent enemy Pokémon for 1 second.",
     "SPIKE_ARMOR": "For [3,5,10] seconds, targets that melee attack the user receive WOUND for 2 seconds and take SPECIAL equal to [50,SP]% of the user's DEF. When casting again before the end of the effect, throw spikes in all directions, dealing 30 SPECIAL to all enemies hit.",
     "FUTURE_SIGHT": "Deal [15,30,60,SP] SPECIAL to 5 enemy Pokémon after 2 seconds.",
-    "FAKE_TEARS": "Deal [3,6,9,SP] SPECIAL to all enemy Pokémon and inflict them with ARMOR_BREAK for 3 seconds.",
+    "FAKE_TEARS": "Deal [5,10,15,SP] SPECIAL to all enemy Pokémon and inflict them with ARMOR_BREAK for 3 seconds.",
     "SPARKLING_ARIA": "Deal [15,30,60,SP] SPECIAL to the target and adjacent enemy Pokémon. Cure BURN from all adjacent allied Pokémon.",
     "DRAGON_DARTS": "Throw 3 darts that deals [10,20,40,SP] SPECIAL each to the target. If the target is KO'd, restore 40 PP.",
     "GRASSY_SURGE": "Increase ATK of all GRASS Pokémon by [4,SP].",
@@ -1626,7 +1628,7 @@
     "PYRO_BALL": "The user attacks by igniting a small stone and launching it as a fiery ball at the farthest enemy Pokémon, dealing [10,20,40,SP] SPECIAL and applying BURN for 2 seconds to all enemy Pokémon in its path.",
     "WHIRLPOOL": "Unleash a hail of 4 whirlpools toward the farthest enemy Pokémon, each dealing [125,SP]% ATK SPECIAL to the first enemy Pokémon in their path.",
     "SMOKE_SCREEN": "Channel underground and reappear in the middle of the enemy team, dealing [10,20,40,SP] SPECIAL to all adjacent enemy Pokémon and applying smoke to the back row, making enemies BLINDED.",
-    "PRESENT": "Either deal [80,SP], [150,SP] or [300,SP] SPECIAL to the target, or heal them for 50 HP.",
+    "PRESENT": "Either deal [80,SP], [150,SP] or [300,SP] SPECIAL to the target, or heal them for 50 HP, based on your LUCK.",
     "LEAF_BLADE": "The user's next attack is a guaranteed critical hit dealing [100,SP]% of ATK as TRUE.",
     "ANCHOR_SHOT": "Grab the farthest enemy Pokémon and deal [20,40,80,SP] SPECIAL.",
     "MAGNET_RISE": "Grant PROTECT for 2 seconds and [10,SP]% dodge chance to the user to the [2,4,6] adjacent allied Pokémon with the lowest health.",
@@ -1823,7 +1825,8 @@
     "HORN_ATTACK": "Deal [3,4,5,SP] x ATK as SPECIAL to the target and cause ARMOR_BREAK for 8 seconds.",
     "RAZOR_LEAF": "Throw sharp leafs in a line behind the target. All enemies hit take [20,40,80,SP] SPECIAL. Can crit by default.",
     "MUD_SHOT": "Hurls mud at the target, dealing [25,50,75,SP] SPECIAL and reducing their SPEED by [10,20,30,SP].",
-    "MALIGNANT_CHAIN": "Extends a poisonous chain to ensnare a target, inflicting LOCKED and 3 stacks of POISONNED for [3,SP] seconds."
+    "MALIGNANT_CHAIN": "Extends a poisonous chain to ensnare a target, inflicting LOCKED and 3 stacks of POISONNED for [3,SP] seconds.",
+    "FILET_AWAY": "Sacrify 50% of current HP and gain [10,SP] ATK and [20,SP] SPEED"
   },
   "effect": {
     "INGRAIN": "Ingrain",
@@ -2031,9 +2034,9 @@
     "DUBIOUS_DISC": "Get an artificial item. It is removed when losing the synergy.",
     "LINK_CABLE": "Gain +6% base ATK, AP and max HP as SHIELD per held item. Get another artificial item.",
     "GOOGLE_SPECS": "Gain +12% base ATK, AP and max HP as SHIELD per held item. Get another artificial item.",
-    "HATCHER": "Each BABY has [8,LK]% chance to find an Egg.",
+    "HATCHER": "Each BABY has [10,LK]% chance to find an Egg.",
     "BREEDER": "Get at least one Egg after each defeat against a player",
-    "GOLDEN_EGGS": "Each BABY has [4,LK]% chance to find a Golden Egg (max 1 on bench). Golden eggs can be sold for 10 GOLD or give a shiny item when hatched.",
+    "GOLDEN_EGGS": "Each BABY has [5,LK]% chance to find a Golden Egg (max 1 on bench). Golden eggs can be sold for 10 GOLD or give a shiny item when hatched.",
     "GRASSY_TERRAIN": "Increase damage dealt by 20% (Grass only)",
     "PSYCHIC_TERRAIN": "Increase damage dealt by 20% (Psychic only)",
     "ELECTRIC_TERRAIN": "Increase damage dealt by 20% (Electric only)",
@@ -2217,6 +2220,7 @@
     "LEEK": "Leek",
     "LARGE_LEEK": "Large Leek",
     "SPINDA_COCKTAIL": "Spinda's Cocktail",
+    "SMOKED_FILET": "Smoked Filet",
     "SWEETS": "Sweets",
     "RIBBON_SWEET": "Ribbon Sweet",
     "STAR_SWEET": "Star Sweet",
@@ -2402,6 +2406,7 @@
     "LEEK": "Gain 30% CRIT_CHANCE and allow ability to critically strike in the next fight.",
     "LARGE_LEEK": "Gain 30% CRIT_POWER and allow ability to critically strike in the next fight.",
     "SPINDA_COCKTAIL": "A cocktail with [LK] random effects that can buff stats or make you dizzy.",
+    "SMOKED_FILET": "Permanently lose 10 max HP to gain 3 ATK and 5 AP.",
     "SWEETS": "A random candy granting a permanent stats bonus",
     "RIBBON_SWEET": "Gain 3 permanent SPE_DEF",
     "STAR_SWEET": "Gain 5 permanent AP",
@@ -3580,7 +3585,9 @@
     "FIRST_PARTNER": "First Partner",
     "SLAMINGO": "Slamingo",
     "BLOOD_MONEY": "Blood Money",
-    "TOWN_FESTIVAL": "Town Festival"
+    "TOWN_FESTIVAL": "Town Festival",
+    "HIGH_ROLLER": "High Roller",
+    "REGIONAL_SPECIALITIES": "Regional Specialities"
   },
   "scribble_description": {
     "EVERYONE_IS_HERE": "All the additional picks are available immediately",
@@ -3597,7 +3604,9 @@
     "FIRST_PARTNER": "Choose your starter Pokémon. You get a copy of this unit every stage up to stage 10.",
     "SLAMINGO": "All items are dropped when a Pokémon is put on the bench. Starts with 4 random components.",
     "BLOOD_MONEY": "Every KO gives 1 GOLD. No extra income from interests.",
-    "TOWN_FESTIVAL": "You always get an encounter in town and all the carousel items are free."
+    "TOWN_FESTIVAL": "You always get an encounter in town and all the carousel items are free.",
+    "HIGH_ROLLER": "Shops have a chance to contain Hatch at stages 0-10, Unique at stages 10-20 and Legendary after stage 20.",
+    "REGIONAL_SPECIALITIES": "Your current region types count towards your synergies. After changing region, your team tastes a local dish."
   },
   "town_encounter_description": {
     "KECLEON": "Kecleon sells Synergy stones for {{cost}} GOLD",

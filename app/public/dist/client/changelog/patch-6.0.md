@@ -24,6 +24,7 @@
 - Dachsbun
 - Milcery
 - Alcremie (Vanilla, Ruby, Matcha, Mint, Lemon, Salted, Ruby Swirl, Caramel Swirl, Rainbow Swirl)
+- Veluza
 - Pecharunt
 - Wooper
 - Quagsire
@@ -93,6 +94,7 @@
 - New ability for Nidoran male line: Horn attack: deal 3/4/5x Attack as special damage and Armor break for 8 seconds
 - New ability for Seedot line: Razor leaf: Throw sharp leafs in a line behind the target. All enemies hit take 20/40/80 special damage. Can crit by default.
 - Change Razor Wind (Noibat, Farfetch'd): no longer inflict paralysis not hit adjacent units. Now can crit by default. Noivern line PP 100 → 70
+- Buff Gothita line: def 2/2/2 → 2/4/6 ; Fake tears damage 3/6/9 → 5/10/15
 
 # Changes to Synergies
 
@@ -105,6 +107,7 @@
 - Fire burn chance on attacks now inflicts Burn for ~~2~~ 3 seconds
 - Wild now have a chance to inflict Wound **only when synergy active**
 - Ghost now gets dodge chance and chance to inflict Silence on hit **only when synergy active**
+- Buff Baby 3: 8% → 10% egg chance and Baby 7: 4% → 5% shiny egg chance
 
 # Changes to Items
 
@@ -156,5 +159,5 @@
 - ELO decay now starts after 15 days of inactivity instead of 10
 - Stage 19 rewards will now be complete items instead of components if player has an even number of components at that stage
 - Removed Scribbles Kecleon's Shop and Synergy wheel, replaced by town encounters
-- New scribble: Town Festival
+- New scribbles: Town Festival, High Roller, Regional Specialities
 - Armor Reduction status is renamed to Armor Break
