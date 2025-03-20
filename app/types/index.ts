@@ -138,6 +138,7 @@ export enum Transfer {
   PICK_BERRY = "PICK_BERRY",
   PRELOAD_MAPS = "PRELOAD_MAPS",
   NPC_DIALOG = "NPC_DIALOG",
+  DELETE_ACCOUNT = "DELETE_ACCOUNT",
   HEAP_SNAPSHOT = "HEAP_SNAPSHOT"
 }
 
@@ -415,6 +416,7 @@ export interface IPokemon {
   stars: number
   maxPP: number
   luck: number
+  permanentLuck: number
   ap: number
   skill: Ability
   passive: Passive
