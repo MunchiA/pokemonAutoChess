@@ -285,6 +285,13 @@ export default class Player extends Schema implements IPlayer {
     const previousSynergies = this.synergies.toMap()
     let updatedSynergies = computeSynergies(pokemons)
 
+    this.bonusSynergies.forEach((value, synergy) => {
+      updatedSynergies.set(
+        synergy,
+        (updatedSynergies.get(synergy) ?? 0) + value
+      )
+    })
+
     const artifNeedsRecomputing = this.updateArtificialItems(
       previousSynergies,
       updatedSynergies
@@ -297,13 +304,6 @@ export default class Player extends Schema implements IPlayer {
       */
       updatedSynergies = computeSynergies(pokemons)
     }
-
-    this.bonusSynergies.forEach((value, synergy) => {
-      updatedSynergies.set(
-        synergy,
-        (updatedSynergies.get(synergy) ?? 0) + value
-      )
-    })
 
     const previousLight = previousSynergies.get(Synergy.LIGHT) ?? 0
     const newLight = updatedSynergies.get(Synergy.LIGHT) ?? 0
@@ -579,10 +579,6 @@ export default class Player extends Schema implements IPlayer {
         pokemon.onChangePosition(pokemon.positionX, pokemon.positionY, this)
       }
     })
-  }
-
-  refreshShopUI() {
-    this.shop = new ArraySchema<Pkm>(...this.shop)
   }
 }
 
