@@ -54,7 +54,8 @@ import {
   DeleteTournamentCommand,
   SelectLanguageCommand,
   UnbanUserCommand,
-  RemakeTournamentLobbyCommand
+  RemakeTournamentLobbyCommand,
+  DeleteAccountCommand
 } from "./commands/lobby-commands"
 import LobbyState from "./states/lobby-state"
 
@@ -111,7 +112,7 @@ export default class CustomLobbyRoom extends Room<LobbyState> {
 
   async onCreate(): Promise<void> {
     logger.info("create lobby", this.roomId)
-    this.setState(new LobbyState())
+    this.state = new LobbyState()
     this.autoDispose = false
     this.listing.unlisted = true
 
@@ -296,6 +297,10 @@ export default class CustomLobbyRoom extends Room<LobbyState> {
       }
     )
 
+    this.onMessage(Transfer.DELETE_ACCOUNT, (client) => {
+      this.dispatcher.dispatch(new DeleteAccountCommand(), { client })
+    })
+
     this.onMessage(
       Transfer.SET_ROLE,
       (client, { uid, role }: { uid: string; role: Role }) => {
@@ -429,9 +434,9 @@ export default class CustomLobbyRoom extends Room<LobbyState> {
     this.fetchTournaments()
   }
 
-  async onAuth(client: Client, options: any, request: any) {
+  async onAuth(client: Client, options, context) {
     try {
-      super.onAuth(client, options, request)
+      super.onAuth(client, options, context)
       const token = await admin.auth().verifyIdToken(options.idToken)
       const user = await admin.auth().getUser(token.uid)
 

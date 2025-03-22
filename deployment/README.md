@@ -14,7 +14,7 @@ The guide goal is to show you how to deploy Pokemon Auto Chess in different prov
 
 ## Fork the repository
 
-To setup your own server, you need to have full control of your own pokemon auto chess repository. To do so, fork the main repository  ( [https://github.com/MunchiA/pokemonAutoChess/tree/master](https://github.com/MunchiA/pokemonAutoChess/tree/master) )
+To setup your own server, you need to have full control of your own pokemon auto chess repository. To do so, fork the main repository  ( [https://github.com/keldaanCommunity/pokemonAutoChess/tree/master](https://github.com/keldaanCommunity/pokemonAutoChess/tree/master) )
 
 ### Database Hosting (Free)
 
@@ -133,7 +133,7 @@ For some reasons, `npm run assetpack` during build phase does not work on Heroku
  ![alt text](image-14.png)
  - Commit the build folder to your master branch
 
-To help you, you can take a look at https://github.com/MunchiA/pokemonAutoChess/tree/heroku that follows the same step as the tutorial
+To help you, you can take a look at https://github.com/keldaanCommunity/pokemonAutoChess/tree/heroku that follows the same step as the tutorial
 
 Now, you can manually deploy your application in heroku website and test if everything works !
 ![alt text](image-15.png)
@@ -164,7 +164,7 @@ FIREBASE_PRIVATE_KEY=<private_key>
 ```
 ![alt text](image-22.png)
 
-For some reasons, Koyeb buildpack does not always have the LTS version in its npm list. To work around this issue, you need to commit on your fork the removal of the "engine" part of `the package.json`. (You can take a look at [this commit](https://github.com/MunchiA/pokemonAutoChess/commit/9d00dc691b10c13bb3a1f70306518aafb05585f2))
+For some reasons, Koyeb buildpack does not always have the LTS version in its npm list. To work around this issue, you need to commit on your fork the removal of the "engine" part of `the package.json`. (You can take a look at [this commit](https://github.com/keldaanCommunity/pokemonAutoChess/commit/9d00dc691b10c13bb3a1f70306518aafb05585f2))
 ![alt text](image-23.png)
 
 Then, Start your first deployment
@@ -201,6 +201,6 @@ When hosting your own server for Pokemon Auto Chess, there are several legal con
 
 - Intellectual Property (IP) Rights: All rights to the Pokemon Company. Pokemon Auto Chess can stop at any time, whenever The Pokemon Company wants.
 
-- Privacy and Data Protection: You’ll need to comply with data protection laws (such as GDPR in the EU) and inform players about data collection and usage. To do so, you can customize your own [policy](https://github.com/MunchiA/pokemonAutoChess/blob/master/policy.md). Be sure to replace `keldaan.ag@gmail.com` by your own address.
+- Privacy and Data Protection: You’ll need to comply with data protection laws (such as GDPR in the EU) and inform players about data collection and usage. To do so, you can customize your own [policy](https://github.com/keldaanCommunity/pokemonAutoChess/blob/master/policy.md). Be sure to replace `keldaan.ag@gmail.com` by your own address.
 
 - (Discord) Discord terms of Service: Draft clear rules for your discord server. Specify rules, behavior guidelines, and consequences for violations. Players should agree to these terms before playing.

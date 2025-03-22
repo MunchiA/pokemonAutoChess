@@ -1,100 +1,100 @@
-# Política de Privacidad
+# Privacy Policy
 
-Tu privacidad es importante para nosotros. Es política de Keldaan respetar tu privacidad y cumplir con cualquier ley y regulación aplicable con respecto a la información personal que podamos recopilar sobre ti, incluidos nuestros sitios web, https://pokemon.amunchi.net/, y otros sitios que poseemos y operamos.
+Your privacy is important to us. It is Keldaan's policy to respect your privacy and comply with any applicable law and regulation regarding any personal information we may collect about you, including across our website, https://pokemon-auto-chess.com, and other sites we own and operate.
 
-Esta política es efectiva a partir del 5 de octubre de 2021 y fue actualizada por última vez el 11 de noviembre de 2024.
+This policy is effective as of 5 October 2021 and was last updated on 5 October 2021.
 
-# ¿Cómo solicitar la eliminación de tus datos?
+# How to request the deletion of your data?
 
-Puedes solicitar en cualquier momento que todos tus datos sean eliminados. Para hacerlo, notifica a un moderador en el servidor de Discord o envía un correo electrónico a munchi@amunchi.net.
+You can request at any time that all your data be deleted. To do so, please notify a moderator on the discord server or send a mail to keldaan.ag@gmail.com
 
-# Información que Recopilamos
+# Information We Collect
 
-La información que recopilamos incluye tanto la que proporcionas activamente al utilizar o participar en cualquiera de nuestros servicios y promociones, como cualquier información enviada automáticamente por tus dispositivos al acceder a nuestros productos y servicios.
+Information we collect includes both information you knowingly and actively provide us when using or participating in any of our services and promotions, and any information automatically sent by your devices in the course of accessing our products and services.
 
-# Datos de Registro
+# Log Data
 
-Cuando visitas nuestro sitio web, nuestros servidores pueden registrar automáticamente los datos estándar proporcionados por tu navegador web. Esto puede incluir la dirección de Protocolo de Internet (IP) de tu dispositivo, el tipo y la versión de tu navegador, las páginas que visitas, la fecha y hora de tu visita, el tiempo que pasas en cada página, otros detalles sobre tu visita y detalles técnicos que ocurren junto con cualquier error que puedas encontrar.
+When you visit our website, our servers may automatically log the standard data provided by your web browser. It may include your device’s Internet Protocol (IP) address, your browser type and version, the pages you visit, the time and date of your visit, the time spent on each page, other details about your visit, and technical details that occur in conjunction with any errors you may encounter.
 
-Ten en cuenta que, aunque esta información puede no ser personalmente identificable por sí misma, es posible combinarla con otros datos para identificar a personas individualmente.
+Please be aware that while this information may not be personally identifying by itself, it may be possible to combine it with other data to personally identify individual persons.
 
-# Información Personal
+# Personal Information
 
-Podemos solicitar información personal que puede incluir lo siguiente:
+We may ask for personal information which may include one or more of the following:
 
-Correo electrónico
+Email
 
-# Razones Legítimas para Procesar tu Información Personal
+# Legitimate Reasons for Processing Your Personal Information
 
-Solo recopilamos y usamos tu información personal cuando tenemos una razón legítima para hacerlo. En tal caso, solo recopilamos la información personal que sea razonablemente necesaria para proporcionarte nuestros servicios.
+We only collect and use your personal information when we have a legitimate reason for doing so. In which instance, we only collect personal information that is reasonably necessary to provide our services to you.
 
-# Recopilación y Uso de Información
+# Collection and Use of Information
 
-Podemos recopilar información personal cuando realizas cualquiera de las siguientes acciones en nuestro sitio web:
+We may collect personal information from you when you do any of the following on our website:
 
-    Utilizar un dispositivo móvil o navegador web para acceder a nuestro contenido
-    Ponerte en contacto con nosotros por correo electrónico, redes sociales o tecnologías similares
-    Mencionarnos en redes sociales
+    Use a mobile device or web browser to access our content
+    Contact us via email, social media, or on any similar technologies
+    When you mention us on social media
 
-Podemos recopilar, mantener, usar y divulgar información para los siguientes propósitos, y no procesaremos información personal de manera incompatible con estos propósitos:
+We may collect, hold, use, and disclose information for the following purposes, and personal information will not be further processed in a manner that is incompatible with these purposes:
 
+We may collect, hold, use, and disclose information for the following purposes, and personal information will not be further processed in a manner that is incompatible with these purposes:
 
-    Para permitirte personalizar o personalizar tu experiencia en nuestro sitio web
-    Para permitirte acceder y usar nuestro sitio web, aplicaciones asociadas y plataformas de redes sociales asociadas
-    Para llevar registros internos y para fines administrativos
+    to enable you to customise or personalise your experience of our website
+    to enable you to access and use our website, associated applications, and associated social media platforms
+    for internal record keeping and administrative purposes
 
-Ten en cuenta que podemos combinar la información que recopilamos sobre ti con información general o datos de investigación que recibimos de otras fuentes confiables.
+Please be aware that we may combine information we collect about you with general information or research data we receive from other trusted sources.
 
-# Seguridad de tu Información Personal
+# Security of Your Personal Information
 
-Cuando recopilamos y procesamos información personal, y mientras mantenemos esta información, la protegemos mediante medios comercialmente aceptables para evitar pérdidas y robos, así como el acceso, divulgación, copia, uso o modificación no autorizados.
+When we collect and process personal information, and while we retain this information, we will protect it within commercially acceptable means to prevent loss and theft, as well as unauthorized access, disclosure, copying, use, or modification.
 
-Aunque haremos nuestro mejor esfuerzo para proteger la información personal que nos proporciones, te aconsejamos que ningún método de transmisión o almacenamiento electrónico es 100% seguro, y nadie puede garantizar la seguridad absoluta de los datos. Cumpliremos con las leyes aplicables con respecto a cualquier brecha de seguridad de datos.
+Although we will do our best to protect the personal information you provide to us, we advise that no method of electronic transmission or storage is 100% secure, and no one can guarantee absolute data security. We will comply with laws applicable to us in respect of any data breach.
 
-Eres responsable de seleccionar cualquier contraseña y de su seguridad general, asegurando la seguridad de tu propia información dentro de los límites de nuestros servicios.
+You are responsible for selecting any password and its overall security strength, ensuring the security of your own information within the bounds of our services
 
-# ¿Cuánto Tiempo Conservamos tu Información Personal?
+# How Long We Keep Your Personal Information
 
-Conservamos tu información personal solo durante el tiempo que la necesitemos. Este periodo puede depender de para qué estamos usando tu información, de acuerdo con esta política de privacidad. Si tu información personal ya no es necesaria, la eliminaremos o la haremos anónima eliminando todos los detalles que te identifiquen.
+We keep your personal information only for as long as we need to. This time period may depend on what we are using your information for, in accordance with this privacy policy. If your personal information is no longer required, we will delete it or make it anonymous by removing all details that identify you.
 
-Sin embargo, si es necesario, podemos conservar tu información personal para cumplir con una obligación legal, contable o de informes, o para fines de archivo en el interés público, para investigación científica o histórica, o para fines estadísticos.
+However, if necessary, we may retain your personal information for our compliance with a legal, accounting, or reporting obligation or for archiving purposes in the public interest, scientific, or historical research purposes or statistical purposes.
 
-# Privacidad de los Menores
+# Children’s Privacy
 
-No dirigimos ninguno de nuestros productos o servicios directamente a menores de 13 años, y no recopilamos deliberadamente información personal sobre menores de 13 años.
+We do not aim any of our products or services directly at children under the age of 13, and we do not knowingly collect personal information about children under 13.
 
-# Transferencias Internacionales de Información Personal
+# International Transfers of Personal Information
 
-La información personal que recopilamos se almacena y/o procesa donde nosotros o nuestros socios, afiliados y proveedores externos mantenemos instalaciones. Ten en cuenta que las ubicaciones a las que almacenamos, procesamos o transferimos tu información personal pueden no tener las mismas leyes de protección de datos que el país en el que inicialmente proporcionaste la información. Si transferimos tu información personal a terceros en otros países: (i) realizaremos esas transferencias de acuerdo con los requisitos de la ley aplicable; y (ii) protegeremos la información personal transferida de acuerdo con esta política de privacidad.
+The personal information we collect is stored and/or processed where we or our partners, affiliates, and third-party providers maintain facilities. Please be aware that the locations to which we store, process, or transfer your personal information may not have the same data protection laws as the country in which you initially provided the information. If we transfer your personal information to third parties in other countries: (i) we will perform those transfers in accordance with the requirements of applicable law; and (ii) we will protect the transferred personal information in accordance with this privacy policy.
 
-# Tus Derechos y Control de tu Información Personal
-Siempre tienes el derecho de retener información personal sobre ti, entendiendo que tu experiencia en nuestro sitio web puede verse afectada. No te discriminaremos por ejercer cualquiera de tus derechos sobre tu información personal. Si nos proporcionas información personal, entiendes que recopilaremos, mantendremos, usaremos y divulgaremos de acuerdo con esta política de privacidad. Retienes el derecho de solicitar detalles de cualquier información personal que tengamos sobre ti.
+# Your Rights and Controlling Your Personal Information
 
-Si recibimos información personal sobre ti de un tercero, la protegeremos tal como se establece en esta política de privacidad. Si eres un tercero que proporciona información personal sobre otra persona, declaras y garantizas que tienes el consentimiento de esa persona para proporcionar la información personal.
+You always retain the right to withhold personal information from us, with the understanding that your experience of our website may be affected. We will not discriminate against you for exercising any of your rights over your personal information. If you do provide us with personal information you understand that we will collect, hold, use and disclose it in accordance with this privacy policy. You retain the right to request details of any personal information we hold about you.
 
-Si anteriormente estuviste de acuerdo en que usemos tu información personal para marketing directo, puedes cambiar de opinión en cualquier momento. Te proporcionaremos la capacidad de darte de baja de nuestra base de datos de correo electrónico o de optar por no recibir comunicaciones. Ten en cuenta que es posible que necesitemos solicitar información específica para ayudarnos a confirmar tu identidad.
+If we receive personal information about you from a third party, we will protect it as set out in this privacy policy. If you are a third party providing personal information about somebody else, you represent and warrant that you have such person’s consent to provide the personal information to us.
 
-Si consideras que alguna información que tenemos sobre ti es inexacta, desactualizada, incompleta, irrelevante o engañosa, ponte en contacto con nosotros usando los detalles proporcionados en esta política de privacidad. Tomaremos medidas razonables para corregir cualquier información que se considere inexacta, incompleta, engañosa o desactualizada.
+If you have previously agreed to us using your personal information for direct marketing purposes, you may change your mind at any time. We will provide you with the ability to unsubscribe from our email-database or opt out of communications. Please be aware we may need to request specific information from you to help us confirm your identity.
 
-Si consideras que hemos infringido una ley de protección de datos relevante y deseas presentar una queja, ponte en contacto con nosotros proporcionando todos los detalles de la supuesta infracción. Investigaremos rápidamente tu queja y te responderemos por escrito, indicando el resultado de nuestra investigación y los pasos que tomaremos para resolver tu queja. También tienes derecho a contactar a una autoridad reguladora o de protección de datos en relación con tu queja.
+If you believe that any information we hold about you is inaccurate, out of date, incomplete, irrelevant, or misleading, please contact us using the details provided in this privacy policy. We will take reasonable steps to correct any information found to be inaccurate, incomplete, misleading, or out of date.
 
-# Uso de Cookies
+If you believe that we have breached a relevant data protection law and wish to make a complaint, please contact us using the details below and provide us with full details of the alleged breach. We will promptly investigate your complaint and respond to you, in writing, setting out the outcome of our investigation and the steps we will take to deal with your complaint. You also have the right to contact a regulatory body or data protection authority in relation to your complaint.
 
-Usamos “cookies” para recopilar información sobre ti y tu actividad en nuestro sitio. Una cookie es un pequeño fragmento de datos que nuestro sitio web almacena en tu computadora y accede cada vez que visitas, para que podamos comprender cómo usas nuestro sitio. Esto nos ayuda a ofrecerte contenido basado en tus preferencias.
+# Use of Cookies
 
-# Límites de Nuestra Política
+We use “cookies” to collect information about you and your activity across our site. A cookie is a small piece of data that our website stores on your computer, and accesses each time you visit, so we can understand how you use our site. This helps us serve you content based on preferences you have specified.
 
-Nuestro sitio web puede enlazar a sitios externos que no son operados por nosotros. Ten en cuenta que no tenemos control sobre el contenido y las políticas de esos sitios, y no podemos aceptar responsabilidad o responsabilidad por sus respectivas prácticas de privacidad.
+# Limits of Our Policy
 
-# Cambios en esta Política
+Our website may link to external sites that are not operated by us. Please be aware that we have no control over the content and policies of those sites, and cannot accept responsibility or liability for their respective privacy practices.
+Changes to This Policy
 
-A nuestra discreción, podemos cambiar nuestra política de privacidad para reflejar actualizaciones en nuestros procesos comerciales, prácticas aceptables actuales o cambios legislativos o regulatorios. Si decidimos cambiar esta política de privacidad, publicaremos los cambios aquí en el mismo enlace mediante el cual estás accediendo a esta política de privacidad.
+At our discretion, we may change our privacy policy to reflect updates to our business processes, current acceptable practices, or legislative or regulatory changes. If we decide to change this privacy policy, we will post the changes here at the same link by which you are accessing this privacy policy.
 
-Si es requerido por la ley, obtendremos tu permiso o te daremos la oportunidad de optar por participar o no, según corresponda, en cualquier nuevo uso de tu información personal.
+If required by law, we will get your permission or give you the opportunity to opt in to or opt out of, as applicable, any new uses of your personal information.
+Contact Us
 
-# Contáctanos
+For any questions or concerns regarding your privacy, you may contact us using the following details:
 
-Para cualquier pregunta o inquietud con respecto a tu privacidad, puedes contactarnos utilizando los siguientes detalles:
-
-Munchi
-munchi@amunchi.net
+Keldaan
+keldaan.ag@gmail.com

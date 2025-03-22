@@ -17,7 +17,7 @@ import {
 } from "../../pages/utils/utils"
 import AnimationManager from "../animation-manager"
 import GameScene from "../scenes/game-scene"
-import { FloatingItem } from "./floating-item"
+import { FloatingItemContainer } from "./floating-item-container"
 import PokemonAvatar from "./pokemon-avatar"
 import PokemonSpecial from "./pokemon-special"
 import { Portal, SynergySymbol } from "./portal"
@@ -35,7 +35,7 @@ import { SpecialGameRule } from "../../../../types/enum/SpecialGameRule"
 
 export default class MinigameManager {
   pokemons: Map<string, PokemonAvatar>
-  items: Map<string, FloatingItem>
+  items: Map<string, FloatingItemContainer>
   portals: Map<string, Portal>
   symbols: Map<string, SynergySymbol>
   uid: string
@@ -53,7 +53,7 @@ export default class MinigameManager {
     items: Map<string, IFloatingItem>
   ) {
     this.pokemons = new Map<string, PokemonAvatar>()
-    this.items = new Map<string, FloatingItem>()
+    this.items = new Map<string, FloatingItemContainer>()
     this.portals = new Map<string, Portal>()
     this.symbols = new Map<string, SynergySymbol>()
     this.uid = uid
@@ -128,8 +128,8 @@ export default class MinigameManager {
   /* Floating Items */
 
   addItem(item: IFloatingItem) {
-    const it = new FloatingItem(
-      this.scene,
+    const it = new FloatingItemContainer(
+      this,
       item.id,
       transformMiniGameXCoordinate(item.x),
       transformMiniGameYCoordinate(item.y),
@@ -414,8 +414,8 @@ export default class MinigameManager {
 
     const regirock = new PokemonSpecial({
       scene: this.scene,
-      x: 24 * 48,
-      y: 22 * 48,
+      x: encounter === TownEncounters.REGIROCK ? cx : 24 * 48,
+      y: encounter === TownEncounters.REGIROCK ? cy : 22 * 48,
       name: Pkm.REGIROCK
     })
 
@@ -490,7 +490,29 @@ export default class MinigameManager {
       ...podiumPokemons
     )
 
-    if (encounter) this.showEncounterDescription(encounter)
+    const specialGameRule = this.scene.room?.state?.specialGameRule
+    if (encounter) {
+      const cost =
+        specialGameRule === SpecialGameRule.TOWN_FESTIVAL
+          ? 0
+          : TownEncounterSellPrice[encounter]
+      this.showEncounterDescription(
+        t(`town_encounter_description.${encounter}`, { cost })
+      )
+    } else if (specialGameRule && this.scene.room?.state.stageLevel === 0) {
+      const smeargle = new PokemonSpecial({
+        scene: this.scene,
+        x: cx,
+        y: cy,
+        name: Pkm.SMEARGLE
+      })
+      this.villagers.push(smeargle)
+      this.showEncounterDescription(
+        t(`scribble.${specialGameRule}`) +
+          " - " +
+          t(`scribble_description.${specialGameRule}`)
+      )
+    }
   }
 
   showEmote(id: string, emote: Emotion) {
@@ -518,15 +540,10 @@ export default class MinigameManager {
     }
   }
 
-  showEncounterDescription(encounter: TownEncounter) {
-    const specialGameRule = this.scene.room?.state.specialGameRule
-    const cost =
-      specialGameRule === SpecialGameRule.TOWN_FESTIVAL
-        ? 0
-        : TownEncounterSellPrice[encounter]
+  showEncounterDescription(desc: string) {
     this.encounterDescription = new GameDialog(
       this.scene,
-      t(`town_encounter_description.${encounter}`, { cost }),
+      desc,
       undefined,
       "town-encounter-description"
     )
@@ -536,5 +553,11 @@ export default class MinigameManager {
       .removeInteractive()
     // add to scene
     this.scene.add.existing(this.encounterDescription)
+  }
+
+  closeDetails() {
+    for (const it of this.items.values()) {
+      it.closeDetail()
+    }
   }
 }

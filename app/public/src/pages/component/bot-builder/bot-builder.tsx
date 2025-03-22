@@ -6,7 +6,7 @@ import {
   IBot,
   IDetailledPokemon
 } from "../../../../../models/mongo-models/bot-v2"
-import { PkmWithConfig, Role } from "../../../../../types"
+import { PkmWithCustom, Role } from "../../../../../types"
 import { PkmIndex } from "../../../../../types/enum/Pokemon"
 import { logger } from "../../../../../utils/logger"
 import { max, min } from "../../../../../utils/number"
@@ -41,6 +41,7 @@ export default function BotBuilder() {
   const [currentModal, setCurrentModal] = useState<"import" | "export" | null>(null)
   const [violation, setViolation] = useState<string>()
   const user = useAppSelector((state) => state.network.profile)
+  const isBotManager = user?.role === Role.BOT_MANAGER || user?.role === Role.ADMIN
 
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
@@ -71,7 +72,7 @@ export default function BotBuilder() {
         logger.debug(`bot ${botId} imported`)
       })
     }
-  }, [queryParams, bot])
+  }, [queryParams])
 
   const prevStep = useCallback(
     () => setStage(min(1)(currentStage - 1)),
@@ -104,14 +105,14 @@ export default function BotBuilder() {
     }
   }
 
-  function changeAvatar(pkm: PkmWithConfig) {
+  function changeAvatar(pkm: PkmWithCustom) {
     bot.name = pkm.name.toUpperCase()
     bot.avatar = getAvatarString(PkmIndex[pkm.name], pkm.shiny, pkm.emotion)
     completeBotInfo()
   }
 
   function completeBotInfo() {
-    if (bot.id) {
+    if (bot.id && !isBotManager) {
       // fork existing bot
       setQueryParams({})
       bot.id = ""
@@ -164,13 +165,11 @@ export default function BotBuilder() {
           {t("back_to_lobby")}
         </button>
         <div className="spacer"></div>
-        {(user?.role === Role.ADMIN ||
-          user?.role === Role.MODERATOR ||
-          user?.role === Role.BOT_MANAGER) && (
-            <button onClick={() => navigate("/bot-admin")} className="bubbly red">
-              {t("bot_admin")}
-            </button>
-          )}
+        {isBotManager && (
+          <button onClick={() => navigate("/bot-admin")} className="bubbly red">
+            {t("bot_admin")}
+          </button>
+        )}
         <button
           onClick={() => { setCurrentModal("import") }}
           className="bubbly orange"

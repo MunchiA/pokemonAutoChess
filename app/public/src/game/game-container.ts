@@ -14,7 +14,6 @@ import { Pokemon } from "../../../models/colyseus-models/pokemon"
 import { PokemonAvatarModel } from "../../../models/colyseus-models/pokemon-avatar"
 import { Portal, SynergySymbol } from "../../../models/colyseus-models/portal"
 import Status from "../../../models/colyseus-models/status"
-import { IPokemonCollectionItem } from "../../../models/mongo-models/user-metadata"
 import GameState from "../../../rooms/states/game-state"
 import {
   IDragDropCombineMessage,
@@ -28,6 +27,7 @@ import {
 import { Ability } from "../../../types/enum/Ability"
 import {
   AttackType,
+  GamePhaseState,
   HealType,
   Orientation,
   PokemonActionState,
@@ -652,7 +652,9 @@ class GameContainer {
 
   setPlayer(player: Player) {
     this.player = player
-    this.gameScene?.setMap(player.map)
+    if (this.room.state.phase !== GamePhaseState.TOWN) {
+      this.gameScene?.setMap(player.map)
+    }
     this.gameScene?.battle?.setPlayer(player)
     this.gameScene?.board?.setPlayer(player)
     this.gameScene?.itemsContainer?.setPlayer(player)

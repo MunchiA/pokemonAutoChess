@@ -24,6 +24,10 @@
 - Dachsbun
 - Milcery
 - Alcremie (Vanilla, Ruby, Matcha, Mint, Lemon, Salted, Ruby Swirl, Caramel Swirl, Rainbow Swirl)
+- Veluza
+- Pecharunt
+- Wooper
+- Quagsire
 
 # Changes to Pokemon & Abilities
 
@@ -37,6 +41,7 @@
 - Munchlax line passive changed: now also gain permanent HP by eating dishes and cooking
 - Applin line is now Dragon/Grass/Gourmet, with a new ability
 - Cherubi line is now Flora/Light/Gourmet
+- Chansey and Blissey are now Normal/Fairy/Gourmet
 - Tropius is now Grass/Gourmet/Flying; passive changed to Signature Dish
 - Shuckle is now Bug/Rock/Gourmet; passive changed to Signature Dish
 - Farfetch'd is now Flying/Gourmet/Normal
@@ -51,7 +56,7 @@
 - Nerf Teatime (Polteageist): healing 20/40/80 → 15/30/60
 - Buff Houndour line: PP 125 → 110
 - Buff Topsy Turvy (Inkay): also reverse AP buffs
-- Nerf Inteleon: Snipe shot damage 40/80/160 → 40/80/120
+- Buff Drampa: PP 110 → 90
 - Nerf Gastly line: PP 60 → 80
 - Nerf Stantler: HP 200 → 180, Def/Spedef: 5 → 3 (6 post def/spedef stat change)
 - Nerf Miltank: HP 250 → 200
@@ -64,6 +69,8 @@
 - Buff Unown-N: Shield provided to your team now scales with Unown AP
 - Nerf Cryogonal: PP 95 → 100, Freeze dry: remove AP scaling on the special defense part of the damage, explosive damage 40 + 150% spedef → 30 + 100% spe def
 - Nerf Alolan Raichu: back to tier 3, gets the same stats as Raichu but keeps the additional psychic synergy
+- Nerf Nuzzle (Pichu line): paralysis duration 3/4/5 → 3 seconds at all tiers
+- Nerf Hurricane paralysis duration 4 → 3 seconds
 - Change HyperSpace Fury: now also reduces special defense evert hit
 - Changed Heavy Slam (Aggron): Shield 10/20/40 → 15/30/60, remove AP scaling
 - Buff Concrete Pillar (Conkeldurr) HP 300 → 400
@@ -73,7 +80,7 @@
 - Nerfed Obstruct (Obstagoon): Protect duration 1/2/4 → 1/2/3 seconds
 - Nerfed Celebi HP 300 → 250
 - Nerfed Wishiwashi: HP 100 → 50
-- Buff Jirachi: revert again Doom desire PP from 5.9 ~~60~~ 100 PP if target is KO in the mean time (my bad)
+- Buff Jirachi: PP 100 → 80. Reduce ability cooldowwn to 200ms at 50 speed.
 - Buff Keldeo: PP 100 → 80
 - Buff Octillery; PP 100 → 80, Oktzooka: 150 → 300% of attack as special damage
 - Nerf Aegislash: PP 80 → 100
@@ -85,17 +92,22 @@
 - New ability for Rotom: Charge: until the end of the fight, attacks deal 100% additional special damage (stackable)
 - Nerf Rotom Drone: PP 50 → 80
 - New ability for Nidoran male line: Horn attack: deal 3/4/5x Attack as special damage and Armor break for 8 seconds
+- New ability for Seedot line: Razor leaf: Throw sharp leafs in a line behind the target. All enemies hit take 20/40/80 special damage. Can crit by default.
+- Change Razor Wind (Noibat, Farfetch'd): no longer inflict paralysis not hit adjacent units. Now can crit by default. Noivern line PP 100 → 70
+- Buff Gothita line: def 2/2/2 → 2/4/6 ; Fake tears damage 3/6/9 → 5/10/15
 
 # Changes to Synergies
 
 - New synergy Gourmet: Gourmet Pokémon can be equipped with a Chef's Hat. Chefs will cook up their Signature Dish between fights and feed adjacent allies, giving them various buffs and effects.
 - Berry trees no longer change every time a berry is collected. Instead, they change when you change region.
 - Wild now gives Speed at levels 2-4 and Attack at levels 6-8 instead of attack and movement speed at all levels
+- Electric synergy levels are now 3/5/7 ; change Electric 7: Triple attacks also deal ~~20 special damage to enemies adjacent to the target~~ 10 special damage to **target and enemies adjacent to it**
 - Nerf Amorphous 3 & 5 : 4/8 → 3/6 HP per active synergy
 - Nerf Artificial 4 & 6: 8/15 → 6/12 attack, AP and shield per held item
 - Fire burn chance on attacks now inflicts Burn for ~~2~~ 3 seconds
-- Wild now have ~~25~~ 30% chance to inflict Wound **only when synergy active**
+- Wild now have a chance to inflict Wound **only when synergy active**
 - Ghost now gets dodge chance and chance to inflict Silence on hit **only when synergy active**
+- Buff Baby 3: 8% → 10% egg chance and Baby 7: 4% → 5% shiny egg chance
 
 # Changes to Items
 
@@ -122,6 +134,7 @@
 - PVE rewards from stage 24 onwards now propose 1 synergy stone maximum
 - Regular item carousels now propose 4 synergy stones maximum
 - Weather Windy and Snow now impacts speed instead of movement speed
+- Paralysis status now reduces speed by 50 instead of 40
 
 # UI
 
@@ -130,10 +143,14 @@
 - Added search bar in Wiki > Abilities
 - Disabled right click browser menu when in game
 - Added player add picks and regional picks info when spectating
+- Booster cards can all be flipped at once by pressing the Open booster button a second time
+- Item tooltips are now available for carousel items as well
 
 # Bugfix
 
 - Fix wild chance not being updated immediately when buying a wild Pokémon
+- Fix a mask map tiling error where ACD and ABC were swapped (spoted by @yordleyodel)
+- Fix Moonlit Courtyard tilesets
 
 # Misc
 
@@ -142,5 +159,6 @@
 - ELO decay now starts after 15 days of inactivity instead of 10
 - Stage 19 rewards will now be complete items instead of components if player has an even number of components at that stage
 - Removed Scribbles Kecleon's Shop and Synergy wheel, replaced by town encounters
-- New scribble: Town Festival
+- New scribbles: Town Festival, High Roller, Regional Specialities
 - Armor Reduction status is renamed to Armor Break
+- A new account tab is available in Profile menu, showing your user ID and allowing you to delete your account permanently without having to contact an admin

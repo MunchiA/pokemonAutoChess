@@ -124,7 +124,7 @@ export enum Pkm {
   CHATOT = "CHATOT",
   CHERRIM = "CHERRIM",
   CHERRIM_SUNLIGHT = "CHERRIM_SUNLIGHT",
-  CHERRUBI = "CHERRUBI",
+  CHERUBI = "CHERUBI",
   CHIKORITA = "CHIKORITA",
   CHIMCHAR = "CHIMCHAR",
   CHIMECHO = "CHIMECHO",
@@ -574,6 +574,7 @@ export enum Pkm {
   PAWMO = "PAWMO",
   PAWMOT = "PAWMOT",
   PAWNIARD = "PAWNIARD",
+  PECHARUNT = "PECHARUNT",
   PELIPPER = "PELIPPER",
   PERSIAN = "PERSIAN",
   PETILIL = "PETILIL",
@@ -620,6 +621,7 @@ export enum Pkm {
   PUPITAR = "PUPITAR",
   PURRLOIN = "PURRLOIN",
   PYUKUMUKU = "PYUKUMUKU",
+  QUAGSIRE = "QUAGSIRE",
   QUILAVA = "QUILAVA",
   RABOOT = "RABOOT",
   RAICHU = "RAICHU",
@@ -853,6 +855,7 @@ export enum Pkm {
   VANILLITE = "VANILLITE",
   VANILLUXE = "VANILLUXE",
   VAPOREON = "VAPOREON",
+  VELUZA = "VELUZA",
   VENIPEDE = "VENIPEDE",
   VENOMOTH = "VENOMOTH",
   VENONAT = "VENONAT",
@@ -889,6 +892,7 @@ export enum Pkm {
   WISHIWASHI_SCHOOL = "WISHIWASHI_SCHOOL",
   WOBBUFFET = "WOBBUFFET",
   WOOBAT = "WOOBAT",
+  WOOPER = "WOOPER",
   WORMADAM_PLANT = "WORMADAM_PLANT",
   WORMADAM_SANDY = "WORMADAM_SANDY",
   WORMADAM_TRASH = "WORMADAM_TRASH",
@@ -1159,9 +1163,9 @@ export const PkmIndex: { [key in Pkm]: string } = {
   [Pkm.SUNKERN]: "0191",
   [Pkm.SUNFLORA]: "0192",
   [Pkm.YANMA]: "0193",
-  //[Pkm.WOOPER]: "0194",
+  [Pkm.WOOPER]: "0194",
   [Pkm.PALDEA_WOOPER]: "0194-0002",
-  //[Pkm.QUAGSIRE]: "0195",
+  [Pkm.QUAGSIRE]: "0195",
   [Pkm.ESPEON]: "0196",
   [Pkm.UMBREON]: "0197",
   [Pkm.MURKROW]: "0198",
@@ -1444,7 +1448,7 @@ export const PkmIndex: { [key in Pkm]: string } = {
   //[Pkm.PACHIRISU]: "0417",
   [Pkm.BUIZEL]: "0418",
   [Pkm.FLOATZEL]: "0419",
-  [Pkm.CHERRUBI]: "0420",
+  [Pkm.CHERUBI]: "0420",
   [Pkm.CHERRIM]: "0421",
   [Pkm.CHERRIM_SUNLIGHT]: "0421-0001",
   [Pkm.SHELLOS_WEST_SEA]: "0422",
@@ -2059,7 +2063,7 @@ export const PkmIndex: { [key in Pkm]: string } = {
   //[Pkm.FLAMIGO]: "0973",
   //[Pkm.CETODDLE]: "0974",
   //[Pkm.CETITAN]: "0975",
-  //[Pkm.VELUZA]: "0976",
+  [Pkm.VELUZA]: "0976",
   //[Pkm.DONDOZO]: "0977",
   //[Pkm.TATSUGIRI]: "0978",
   [Pkm.ANNIHILAPE]: "0979",
@@ -2093,7 +2097,8 @@ export const PkmIndex: { [key in Pkm]: string } = {
   [Pkm.OGERPON_WELLSPRING_MASK]: "1017-0005",
   [Pkm.OGERPON_HEARTHFLAME_MASK]: "1017-0006",
   [Pkm.OGERPON_CORNERSTONE_MASK]: "1017-0007",
-  [Pkm.HYDRAPPLE]: "1019"
+  [Pkm.HYDRAPPLE]: "1019",
+  [Pkm.PECHARUNT]: "1025"
 }
 
 export const PkmByIndex: { [index: string]: Pkm } = Object.fromEntries(
@@ -2757,9 +2762,9 @@ export const PkmFamily: { [key in Pkm]: Pkm } = {
   [Pkm.VOLBEAT]: Pkm.VOLBEAT,
   [Pkm.NECROZMA]: Pkm.NECROZMA,
   [Pkm.ULTRA_NECROZMA]: Pkm.NECROZMA,
-  [Pkm.CHERRUBI]: Pkm.CHERRUBI,
-  [Pkm.CHERRIM]: Pkm.CHERRUBI,
-  [Pkm.CHERRIM_SUNLIGHT]: Pkm.CHERRUBI,
+  [Pkm.CHERUBI]: Pkm.CHERUBI,
+  [Pkm.CHERRIM]: Pkm.CHERUBI,
+  [Pkm.CHERRIM_SUNLIGHT]: Pkm.CHERUBI,
   [Pkm.MISDREAVUS]: Pkm.MISDREAVUS,
   [Pkm.MISMAGIUS]: Pkm.MISDREAVUS,
   [Pkm.DODUO]: Pkm.DODUO,
@@ -2877,6 +2882,8 @@ export const PkmFamily: { [key in Pkm]: Pkm } = {
   [Pkm.WORMADAM_SANDY]: Pkm.BURMY_SANDY,
   [Pkm.WORMADAM_TRASH]: Pkm.BURMY_TRASH,
   [Pkm.MOTHIM]: Pkm.BURMY_PLANT, // NOTE: converging evolution
+  [Pkm.WOOPER]: Pkm.WOOPER,
+  [Pkm.QUAGSIRE]: Pkm.WOOPER,
   [Pkm.PALDEA_WOOPER]: Pkm.PALDEA_WOOPER,
   [Pkm.CLODSIRE]: Pkm.PALDEA_WOOPER,
   [Pkm.FUECOCO]: Pkm.FUECOCO,
@@ -3025,7 +3032,9 @@ export const PkmFamily: { [key in Pkm]: Pkm } = {
   [Pkm.ALCREMIE_SALTED]: Pkm.MILCERY,
   [Pkm.ALCREMIE_RUBY_SWIRL]: Pkm.MILCERY,
   [Pkm.ALCREMIE_CARAMEL_SWIRL]: Pkm.MILCERY,
-  [Pkm.ALCREMIE_RAINBOW_SWIRL]: Pkm.MILCERY
+  [Pkm.ALCREMIE_RAINBOW_SWIRL]: Pkm.MILCERY,
+  [Pkm.PECHARUNT]: Pkm.PECHARUNT,
+  [Pkm.VELUZA]: Pkm.VELUZA
 }
 
 export const PkmRegionalVariants: { [key in Pkm]?: readonly Pkm[] } = {
@@ -3042,6 +3051,7 @@ export const PkmRegionalVariants: { [key in Pkm]?: readonly Pkm[] } = {
   [Pkm.PONYTA]: [Pkm.GALARIAN_PONYTA],
   [Pkm.VOLTORB]: [Pkm.HISUI_VOLTORB],
   [Pkm.SANDSHREW]: [Pkm.ALOLAN_SANDSHREW],
+  [Pkm.WOOPER]: [Pkm.PALDEA_WOOPER],
   [Pkm.FARFETCH_D]: [Pkm.GALARIAN_FARFETCH_D],
   [Pkm.ZIGZAGOON]: [Pkm.GALARIAN_ZIGZAGOON],
   [Pkm.ARTICUNO]: [Pkm.GALARIAN_ARTICUNO],
@@ -6466,7 +6476,7 @@ export const AnimationConfig: {
     ability: AnimationType.RearUp,
     emote: AnimationType.Charge
   },
-  [Pkm.CHERRUBI]: {
+  [Pkm.CHERUBI]: {
     attack: AnimationType.Attack,
     ability: AnimationType.Shoot,
     emote: AnimationType.Shake
@@ -7071,6 +7081,16 @@ export const AnimationConfig: {
     attack: AnimationType.Attack,
     ability: AnimationType.Swing,
     emote: AnimationType.Hover
+  },
+  [Pkm.WOOPER]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Charge,
+    emote: AnimationType.Pose
+  },
+  [Pkm.QUAGSIRE]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Shoot,
+    emote: AnimationType.Twirl
   },
   [Pkm.PALDEA_WOOPER]: {
     attack: AnimationType.Attack,
@@ -7844,5 +7864,16 @@ export const AnimationConfig: {
     ability: AnimationType.Shoot,
     emote: AnimationType.Rotate,
     shinyUnavailable: true
+  },
+  [Pkm.PECHARUNT]: {
+    attack: AnimationType.Charge,
+    ability: AnimationType.Charge,
+    emote: AnimationType.Twirl,
+    hop: AnimationType.Twirl
+  },
+  [Pkm.VELUZA]: {
+    attack: AnimationType.Attack,
+    ability: AnimationType.Charge,
+    emote: AnimationType.Shoot
   }
 }

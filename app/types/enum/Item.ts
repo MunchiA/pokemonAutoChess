@@ -164,7 +164,9 @@ export enum Item {
   FRUIT_JUICE = "FRUIT_JUICE",
   LEEK = "LEEK",
   LARGE_LEEK = "LARGE_LEEK",
+  SMOKED_FILET = "SMOKED_FILET",
   SPINDA_COCKTAIL = "SPINDA_COCKTAIL",
+  BINDING_MOCHI = "BINDING_MOCHI",
   STRAWBERRY_SWEET = "STRAWBERRY_SWEET",
   LOVE_SWEET = "LOVE_SWEET",
   BERRY_SWEET = "BERRY_SWEET",
@@ -533,9 +535,11 @@ export const Dishes = [
   Item.LEEK,
   Item.LARGE_LEEK,
   Item.MOOMOO_MILK,
+  Item.SMOKED_FILET,
   Item.SPINDA_COCKTAIL,
   Item.BERRY_JUICE,
   Item.BERRIES,
+  Item.BINDING_MOCHI,
   Item.STRAWBERRY_SWEET,
   Item.LOVE_SWEET,
   Item.BERRY_SWEET,
@@ -545,6 +549,8 @@ export const Dishes = [
   Item.RIBBON_SWEET,
   Item.SWEETS
 ] as const
+
+export type Dish = (typeof Dishes)[number]
 
 export const Flavors = [
   Item.VANILLA_FLAVOR,

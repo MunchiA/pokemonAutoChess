@@ -1034,7 +1034,7 @@ export class OnUpdatePhaseCommand extends Command<GameRoom> {
           case Effect.BEAT_UP:
             player.titles.add(Title.DELINQUENT)
             break
-          case Effect.STEEL_SURGE:
+          case Effect.MAX_MELTDOWN:
             player.titles.add(Title.ENGINEER)
             break
           case Effect.DEEP_MINER:
@@ -1445,19 +1445,21 @@ export class OnUpdatePhaseCommand extends Command<GameRoom> {
         }
       }
 
-      while (player.items.includes(Item.SWEET_APPLE)) {
-        player.items.splice(
-          player.items.findIndex((i) => i === Item.SWEET_APPLE),
-          1,
-          Item.SIRUPY_APPLE
-        )
-      }
-      while (player.items.includes(Item.TART_APPLE)) {
-        player.items.splice(
-          player.items.findIndex((i) => i === Item.TART_APPLE),
-          1,
-          Item.SWEET_APPLE
-        )
+      const rottingItems: Map<Item, Item> = new Map([
+        // order matters to not convert several times in a row
+        [Item.SIRUPY_APPLE, Item.LEFTOVERS],
+        [Item.SWEET_APPLE, Item.SIRUPY_APPLE],
+        [Item.TART_APPLE, Item.SWEET_APPLE]
+      ])
+
+      for (const rottingItem of rottingItems.keys()) {
+        while (player.items.includes(rottingItem as Item)) {
+          player.items.splice(
+            player.items.findIndex((i) => i === rottingItem),
+            1,
+            rottingItems.get(rottingItem)!
+          )
+        }
       }
 
       if (
@@ -1797,8 +1799,8 @@ export class OnUpdatePhaseCommand extends Command<GameRoom> {
     let goldenEggFound = false
 
     if (hasLostLastBattle && hasBabyActive) {
-      const EGG_CHANCE = 0.08
-      const GOLDEN_EGG_CHANCE = 0.04
+      const EGG_CHANCE = 0.1
+      const GOLDEN_EGG_CHANCE = 0.05
       const playerEggChanceStacked = player.eggChance
       const playerGoldenEggChanceStacked = player.goldenEggChance
       const babies = values(player.board).filter(

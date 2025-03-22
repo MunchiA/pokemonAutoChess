@@ -172,6 +172,23 @@ export class GiveTitleCommand extends Command<
   }
 }
 
+export class DeleteAccountCommand extends Command<CustomLobbyRoom> {
+  async execute({
+    client
+  }: {
+    client: Client
+  }) {
+    try {
+      if (client.auth.uid) {
+        await UserMetadata.deleteOne({ uid: client.auth.uid })
+        client.leave(CloseCodes.USER_DELETED)
+      }
+    } catch (error) {
+      logger.error(error)
+    }
+  }
+}
+
 export class HeapSnapshotCommand extends Command<CustomLobbyRoom> {
   execute() {
     logger.info("writing heap snapshot")
@@ -313,11 +330,11 @@ export class OpenBoosterCommand extends Command<
         boosterContent.push(pickRandomPokemonBooster(guaranteedUnique))
       }
 
-      boosterContent.forEach((pkmWithConfig) => {
-        const index = PkmIndex[pkmWithConfig.name]
+      boosterContent.forEach((pkmWithCustom) => {
+        const index = PkmIndex[pkmWithCustom.name]
         const mongoPokemonCollectionItem =
           mongoUser.pokemonCollection.get(index)
-        const dustGain = pkmWithConfig.shiny ? DUST_PER_SHINY : DUST_PER_BOOSTER
+        const dustGain = pkmWithCustom.shiny ? DUST_PER_SHINY : DUST_PER_BOOSTER
 
         if (mongoPokemonCollectionItem) {
           mongoPokemonCollectionItem.dust += dustGain
@@ -337,8 +354,8 @@ export class OpenBoosterCommand extends Command<
 
       // resync, db-authoritative
       user.booster = mongoUser.booster - 1
-      boosterContent.forEach((pkmWithConfig) => {
-        const index = PkmIndex[pkmWithConfig.name]
+      boosterContent.forEach((pkmWithCustom) => {
+        const index = PkmIndex[pkmWithCustom.name]
         const pokemonCollectionItem = user.pokemonCollection.get(index)
         const mongoPokemonCollectionItem =
           mongoUser.pokemonCollection.get(index)
@@ -895,9 +912,7 @@ export class AddBotCommand extends Command<
       const user = this.room.users.get(client.auth.uid)
       if (
         user &&
-        (user.role === Role.ADMIN ||
-          user.role === Role.BOT_MANAGER ||
-          user.role === Role.MODERATOR)
+        (user.role === Role.ADMIN || user.role === Role.BOT_MANAGER)
       ) {
         const id = url.slice(21)
         client.send(Transfer.BOT_DATABASE_LOG, `retrieving id : ${id} ...`)
@@ -962,12 +977,10 @@ export class DeleteBotCommand extends Command<
       const user = this.room.users.get(client.auth.uid)
       if (
         user &&
-        (user.role === Role.ADMIN ||
-          user.role === Role.BOT_MANAGER ||
-          user.role === Role.MODERATOR)
+        (user.role === Role.ADMIN || user.role === Role.BOT_MANAGER)
       ) {
         const id = message
-        const botData = getBotData(id)
+        const botData = await getBotData(id)
         if (!botData) {
           client.send(Transfer.BOT_DATABASE_LOG, `Bot not found:${id}`)
           return
@@ -981,6 +994,7 @@ export class DeleteBotCommand extends Command<
           Transfer.BOT_DATABASE_LOG,
           JSON.stringify(resultDelete, null, 2)
         )
+        client.send(Transfer.DELETE_BOT_DATABASE, id)
         discordService.announceBotDeletion(botData, user)
 
         this.room.bots.delete(id)

@@ -83,7 +83,7 @@ export const SynergyTriggers: { [key in Synergy]: number[] } = {
   [Synergy.GRASS]: [3, 5, 7],
   [Synergy.FIRE]: [2, 4, 6, 8],
   [Synergy.WATER]: [3, 6, 9],
-  [Synergy.ELECTRIC]: [3, 6, 9],
+  [Synergy.ELECTRIC]: [3, 5, 7],
   [Synergy.FIGHTING]: [2, 4, 6, 8],
   [Synergy.PSYCHIC]: [2, 4, 6],
   [Synergy.DARK]: [3, 5, 7],
@@ -286,7 +286,8 @@ export const UniquePool = new Array<PkmProposition>(
   Pkm.CRYOGONAL,
   Pkm.DRAMPA,
   Pkm.APPLIN,
-  Pkm.MILCERY
+  Pkm.MILCERY,
+  Pkm.VELUZA
 )
 
 export const LegendaryPool = new Array<PkmProposition>(
@@ -344,7 +345,8 @@ export const LegendaryPool = new Array<PkmProposition>(
   Pkm.TERRAKION,
   Pkm.VIRIZION,
   Pkm.COBALION,
-  Pkm.KELDEO
+  Pkm.KELDEO,
+  Pkm.PECHARUNT
 )
 
 export const NB_UNIQUE_PROPOSITIONS = 6
@@ -393,7 +395,7 @@ export const DEFAULT_CRIT_POWER = 2
 export const PROJECTILE_SPEED = 4
 
 export const StageDuration: Record<number | "DEFAULT", number> = {
-  0: 24, // adjusted for treasure town theme
+  0: 23, // adjusted for treasure town theme
   1: 30,
   3: 40,
   5: 40,
@@ -460,9 +462,9 @@ export const MaskCoordinate: { [key in Mask]: { x: number; y: number } } =
     BC: { x: 3, y: 0 },
     BD: { x: 4, y: 0 },
     CD: { x: 5, y: 0 },
-    ABC: { x: 5, y: 4 },
+    ABC: { x: 3, y: 4 },
     ABD: { x: 2, y: 4 },
-    ACD: { x: 3, y: 4 },
+    ACD: { x: 5, y: 4 },
     BCD: { x: 2, y: 3 },
     ABCD: { x: 4, y: 3 },
     A1B: { x: 0, y: 2 },

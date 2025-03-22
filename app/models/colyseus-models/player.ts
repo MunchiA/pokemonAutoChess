@@ -5,7 +5,7 @@ import { getUnitPowerScore } from "../../public/src/pages/component/bot-builder/
 import type GameState from "../../rooms/states/game-state"
 import type { IPlayer, Role, Title } from "../../types"
 import { SynergyTriggers, UniquePool } from "../../types/Config"
-import { DungeonPMDO } from "../../types/enum/Dungeon"
+import { DungeonDetails, DungeonPMDO } from "../../types/enum/Dungeon"
 import { BattleResult, Rarity, Team } from "../../types/enum/Game"
 import {
   ArtificialItems,
@@ -19,7 +19,6 @@ import {
 } from "../../types/enum/Item"
 import {
   Pkm,
-  PkmByIndex,
   PkmDuos,
   PkmFamily,
   PkmIndex,
@@ -121,6 +120,7 @@ export default class Player extends Schema implements IPlayer {
   ghost: boolean = false
   firstPartner: Pkm | undefined
   hasLeftGame: boolean = false
+  bonusSynergies: Map<Synergy, number> = new Map<Synergy, number>()
 
   constructor(
     id: string,
@@ -189,62 +189,7 @@ export default class Player extends Schema implements IPlayer {
         pokemon.onAcquired(this)
       })
     } else if (state.specialGameRule === SpecialGameRule.DO_IT_ALL_YOURSELF) {
-      const {
-        name,
-        emotion,
-        shiny = false
-      } = getPokemonCustomFromAvatar(this.avatar)
-      this.firstPartner = name
-
-      switch (this.firstPartner) {
-        case Pkm.AEGISLASH_BLADE:
-          this.firstPartner = Pkm.AEGISLASH
-          break
-
-        case Pkm.HOOPA_UNBOUND:
-          this.firstPartner = Pkm.HOOPA
-          break
-
-        case Pkm.MINIOR_KERNEL_BLUE:
-        case Pkm.MINIOR_KERNEL_GREEN:
-        case Pkm.MINIOR_KERNEL_ORANGE:
-        case Pkm.MINIOR_KERNEL_RED:
-          this.firstPartner = Pkm.MINIOR
-          break
-
-        case Pkm.MORPEKO_HANGRY:
-          this.firstPartner = Pkm.MORPEKO
-          break
-
-        case Pkm.DARMANITAN_ZEN:
-          this.firstPartner = Pkm.DARMANITAN
-          break
-      }
-
-      let avatar: Pokemon
-      if (this.firstPartner === Pkm.EGG) {
-        avatar = createRandomEgg(this, shiny)
-      } else {
-        avatar = PokemonFactory.createPokemonFromName(this.firstPartner, {
-          emotion,
-          shiny
-        })
-      }
-
-      avatar.positionX = getFirstAvailablePositionInBench(this.board) ?? 0
-      avatar.positionY = 0
-      let powerScore = getUnitPowerScore(avatar.name)
-      if (avatar.name === Pkm.EGG) {
-        powerScore = 5
-        if (avatar.shiny) {
-          this.money = 1
-        }
-      }
-      if (powerScore < 5) {
-        this.money += 55 - Math.round(10 * powerScore)
-      }
-      const bonusHP = Math.round(150 - powerScore * 25)
-      avatar.hp = min(10)(avatar.hp + bonusHP)
+      const avatar = spawnDIAYAvatar(this)
       this.board.set(avatar.id, avatar)
       avatar.onAcquired(this)
     } else if (state.specialGameRule === SpecialGameRule.FIRST_PARTNER) {
@@ -324,6 +269,7 @@ export default class Player extends Schema implements IPlayer {
         newPokemon.shiny = true
       }
     })
+    newPokemon.meal = pokemon.meal
     newPokemon.positionX = pokemon.positionX
     newPokemon.positionY = pokemon.positionY
     this.board.delete(pokemon.id)
@@ -351,6 +297,13 @@ export default class Player extends Schema implements IPlayer {
       */
       updatedSynergies = computeSynergies(pokemons)
     }
+
+    this.bonusSynergies.forEach((value, synergy) => {
+      updatedSynergies.set(
+        synergy,
+        (updatedSynergies.get(synergy) ?? 0) + value
+      )
+    })
 
     const previousLight = previousSynergies.get(Synergy.LIGHT) ?? 0
     const newLight = updatedSynergies.get(Synergy.LIGHT) ?? 0
@@ -579,6 +532,20 @@ export default class Player extends Schema implements IPlayer {
           state.shop.addRegionalPokemon(p, this)
         }
       })
+
+      if (state.specialGameRule === SpecialGameRule.REGIONAL_SPECIALITIES) {
+        this.bonusSynergies.clear()
+        const { synergies, regionalSpeciality } = DungeonDetails[this.map]
+        synergies.forEach((synergy) => {
+          this.bonusSynergies.set(synergy, 1)
+        })
+        this.updateSynergies()
+        if (regionalSpeciality) {
+          this.board.forEach((pokemon) => {
+            pokemon.meal = regionalSpeciality
+          })
+        }
+      }
     }
 
     newRegionalPokemons.sort(
@@ -624,4 +591,85 @@ function pickRandomTMs() {
   const secondTM = pickRandomIn(TMs.filter((tm) => tm !== firstTM))
   const hm = pickRandomIn(HMs)
   return [firstTM, secondTM, hm]
+}
+
+function spawnDIAYAvatar(player: Player): Pokemon {
+  const {
+    name,
+    emotion,
+    shiny = false
+  } = getPokemonCustomFromAvatar(player.avatar)
+  player.firstPartner = name
+  let powerScore = getUnitPowerScore(name)
+
+  switch (player.firstPartner) {
+    case Pkm.AEGISLASH_BLADE:
+      player.firstPartner = Pkm.AEGISLASH
+      break
+
+    case Pkm.HOOPA_UNBOUND:
+      player.firstPartner = Pkm.HOOPA
+      break
+
+    case Pkm.MINIOR_KERNEL_BLUE:
+    case Pkm.MINIOR_KERNEL_GREEN:
+    case Pkm.MINIOR_KERNEL_ORANGE:
+    case Pkm.MINIOR_KERNEL_RED:
+      player.firstPartner = Pkm.MINIOR
+      break
+
+    case Pkm.MORPEKO_HANGRY:
+      player.firstPartner = Pkm.MORPEKO
+      break
+
+    case Pkm.DARMANITAN_ZEN:
+      player.firstPartner = Pkm.DARMANITAN
+      break
+
+    case Pkm.COSMOG:
+    case Pkm.POIPOLE:
+    case Pkm.CHIMECHO:
+    case Pkm.GIMMIGHOUL:
+      powerScore = 5
+      break
+
+    case Pkm.COSMOEM:
+      powerScore = 6
+      break
+
+    case Pkm.NAGANADEL:
+    case Pkm.GHOLDENGO:
+      powerScore = 8
+      break
+  }
+
+  let avatar: Pokemon
+  if (player.firstPartner === Pkm.EGG) {
+    avatar = createRandomEgg(player, false)
+    powerScore = 5
+  } else {
+    avatar = PokemonFactory.createPokemonFromName(player.firstPartner, {
+      emotion,
+      shiny
+    })
+  }
+
+  avatar.positionX = getFirstAvailablePositionInBench(player.board) ?? 0
+  avatar.positionY = 0
+
+  if (avatar.name === Pkm.EGG) {
+    powerScore = 5
+    if (avatar.shiny) {
+      player.money = 1
+    }
+  }
+  if (avatar.rarity === Rarity.HATCH || avatar.rarity === Rarity.SPECIAL) {
+    powerScore += 5
+  }
+  if (powerScore < 5) {
+    player.money += 55 - Math.round(10 * powerScore)
+  }
+  const bonusHP = Math.round(150 - powerScore * 30)
+  avatar.hp = min(10)(avatar.hp + bonusHP)
+  return avatar
 }

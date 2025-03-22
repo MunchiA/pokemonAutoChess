@@ -81,4 +81,4 @@
 
 # Misc
 
-- Some region synergies have been changed to add regions with Amorphous type ([details](https://github.com/MunchiA/pokemonAutoChess/commit/21804c628ca403c0914db2f68f6315e0f9a51c92#diff-9c96a7aef333d81a5c1b0c1264418f86c1bf4b37be15a7131c2f53ddb6ce2acb))
+- Some region synergies have been changed to add regions with Amorphous type ([details](https://github.com/keldaanCommunity/pokemonAutoChess/commit/21804c628ca403c0914db2f68f6315e0f9a51c92#diff-9c96a7aef333d81a5c1b0c1264418f86c1bf4b37be15a7131c2f53ddb6ce2acb))

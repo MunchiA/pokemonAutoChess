@@ -702,10 +702,6 @@ export function displayAbility(
       addAbilitySprite(skill, coordinatesTarget, true).setScale(3)
       break
 
-    case Ability.PAYBACK:
-      addAbilitySprite(skill, coordinatesTarget, true).setScale(2)
-      break
-
     case Ability.NIGHT_SLASH:
     case Ability.KOWTOW_CLEAVE:
       addAbilitySprite(Ability.NIGHT_SLASH, coordinatesTarget, true).setScale(2)
@@ -909,6 +905,22 @@ export function displayAbility(
         ease: "linear",
         yoyo: false,
         duration: 1000,
+        onComplete: () => {
+          specialProjectile.destroy()
+        }
+      })
+      break
+    }
+
+    case Ability.MUD_SHOT: {
+      const specialProjectile = addAbilitySprite(skill, coordinates).setScale(4)
+      scene.tweens.add({
+        targets: specialProjectile,
+        x: coordinatesTarget[0],
+        y: coordinatesTarget[1],
+        ease: "linear",
+        yoyo: false,
+        duration: 350,
         onComplete: () => {
           specialProjectile.destroy()
         }
@@ -1518,6 +1530,10 @@ export function displayAbility(
       addAbilitySprite(skill, coordinates, true).setScale(2)
       break
 
+    case Ability.FILET_AWAY:
+      addAbilitySprite(Ability.SHIELDS_UP, coordinates, true).setScale(2)
+      break
+
     case Ability.BRAVE_BIRD:
       addAbilitySprite(skill, coordinatesTarget, true).setScale(2)
       break
@@ -1798,7 +1814,9 @@ export function displayAbility(
       break
 
     case Ability.DIVE:
-      addAbilitySprite(skill, coordinates, true).setScale(3)
+      addAbilitySprite(skill, coordinates, true)
+        .setScale(3)
+        .setDepth(DEPTH.ABILITY_BELOW_POKEMON)
       break
 
     case Ability.SMOKE_SCREEN:
@@ -2296,6 +2314,28 @@ export function displayAbility(
             projectile.destroy()
           }
         })
+      })
+      break
+    }
+
+    case Ability.RAZOR_LEAF: {
+      const [dx, dy] = OrientationVector[orientation]
+      const finalCoordinates = transformAttackCoordinate(
+        positionX + dx * 8,
+        positionY + dy * 8,
+        flip
+      )
+      const projectile = addAbilitySprite(skill, coordinates).setScale(2)
+      scene.tweens.add({
+        targets: projectile,
+        x: finalCoordinates[0],
+        y: finalCoordinates[1],
+        ease: "linear",
+        yoyo: false,
+        duration: 2000,
+        onComplete: () => {
+          projectile.destroy()
+        }
       })
       break
     }
@@ -3449,6 +3489,34 @@ export function displayAbility(
         angle: 270,
         ease: "linear",
         duration: distance * 2,
+        onComplete: () => {
+          specialProjectile.destroy()
+        }
+      })
+      break
+    }
+
+    case Ability.MALIGNANT_CHAIN: {
+      const angle = Math.atan2(
+        coordinatesTarget[1] - coordinates[1],
+        coordinatesTarget[0] - coordinates[0]
+      )
+      const distance = distanceE(
+        coordinates[0],
+        coordinates[1],
+        coordinatesTarget[0],
+        coordinatesTarget[1]
+      )
+      const specialProjectile = addAbilitySprite(skill, coordinates)
+        .setOrigin(0.5, 0)
+        .setScale(1, 0)
+        .setRotation(angle - Math.PI / 2)
+
+      scene.tweens.add({
+        targets: specialProjectile,
+        scaleY: distance / 80,
+        ease: "linear",
+        duration: 600,
         onComplete: () => {
           specialProjectile.destroy()
         }
