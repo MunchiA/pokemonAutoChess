@@ -119,7 +119,7 @@ export const PVEStages: { [turn: number]: PVEStage } = {
     getRewards(player: Player) {
       const items = values(player.board)
         .flatMap((p) => values(p.items))
-        .concat(player.items)
+        .concat([...player.items])
       const nbComponents = items.filter((i) =>
         ItemComponents.includes(i)
       ).length
@@ -142,10 +142,11 @@ export const PVEStages: { [turn: number]: PVEStage } = {
     ],
     marowakItems: [[Item.FLUFFY_TAIL], [Item.POKEMONOMICON], [Item.AQUA_EGG]],
     getRewardsPropositions(player: Player) {
-      return [
-        ...pickNRandomIn(CraftableNonSynergyItems, 2),
-        ...pickNRandomIn(CraftableItems, 1)
-      ]
+      const rewards = pickNRandomIn(CraftableNonSynergyItems, 2)
+      rewards.push(
+        pickRandomIn(CraftableItems.filter((o) => !rewards.includes(o)))
+      )
+      return rewards
     }
   },
 
@@ -164,10 +165,11 @@ export const PVEStages: { [turn: number]: PVEStage } = {
       [Item.FIRE_STONE, Item.THUNDER_STONE, Item.SHELL_BELL]
     ],
     getRewardsPropositions(player: Player) {
-      return [
-        ...pickNRandomIn(CraftableNonSynergyItems, 2),
-        ...pickNRandomIn(CraftableItems, 1)
-      ]
+      const rewards = pickNRandomIn(CraftableNonSynergyItems, 2)
+      rewards.push(
+        pickRandomIn(CraftableItems.filter((o) => !rewards.includes(o)))
+      )
+      return rewards
     }
   },
 
@@ -186,10 +188,11 @@ export const PVEStages: { [turn: number]: PVEStage } = {
       [Item.RED_ORB, Item.FLAME_ORB, Item.PROTECTIVE_PADS]
     ],
     getRewardsPropositions(player: Player) {
-      return [
-        ...pickNRandomIn(CraftableNonSynergyItems, 2),
-        ...pickNRandomIn(CraftableItems, 1)
-      ]
+      const rewards = pickNRandomIn(CraftableNonSynergyItems, 2)
+      rewards.push(
+        pickRandomIn(CraftableItems.filter((o) => !rewards.includes(o)))
+      )
+      return rewards
     }
   },
 
@@ -214,10 +217,11 @@ export const PVEStages: { [turn: number]: PVEStage } = {
       [Item.OLD_AMBER]
     ],
     getRewardsPropositions(player: Player) {
-      return [
-        ...pickNRandomIn(CraftableNonSynergyItems, 2),
-        ...pickNRandomIn(CraftableItems, 1)
-      ]
+      const rewards = pickNRandomIn(CraftableNonSynergyItems, 2)
+      rewards.push(
+        pickRandomIn(CraftableItems.filter((o) => !rewards.includes(o)))
+      )
+      return rewards
     }
   },
 

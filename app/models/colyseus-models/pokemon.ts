@@ -12,7 +12,7 @@ import {
   HatchEvolutionRule,
   ItemEvolutionRule
 } from "../../core/evolution-rules"
-import { ItemStats, onItemRemoved } from "../../core/items"
+import { ItemStats } from "../../core/items"
 import Simulation from "../../core/simulation"
 import { DelayedCommand } from "../../core/simulation-command"
 import GameState from "../../rooms/states/game-state"
@@ -48,6 +48,7 @@ import {
   ItemComponents,
   ItemRecipe,
   OgerponMasks,
+  SynergyGivenByItem,
   SynergyItems
 } from "../../types/enum/Item"
 import { Passive } from "../../types/enum/Passive"
@@ -245,7 +246,13 @@ export class Pokemon extends Schema implements IPokemon {
 
   removeItem(item: Item) {
     this.items.delete(item)
-    onItemRemoved(item, this)
+    if (
+      item in SynergyGivenByItem &&
+      new PokemonClasses[this.name]().types.has(SynergyGivenByItem[item]) ===
+        false
+    ) {
+      this.types.delete(SynergyGivenByItem[item])
+    }
   }
 }
 
@@ -2138,10 +2145,6 @@ export class Poliwhirl extends Pokemon {
       }
     }
   )
-
-  onChangePosition(x: number, y: number, player: Player): void {
-    player.refreshShopUI()
-  }
 }
 
 export class Politoed extends Pokemon {
@@ -3730,6 +3733,14 @@ export class NidoranM extends Pokemon {
   skill = Ability.HORN_ATTACK
   attackSprite = AttackSprite.POISON_MELEE
   regional = true
+  isInRegion(map: DungeonPMDO, state: GameState) {
+    const regionSynergies = DungeonDetails[map]?.synergies
+    return (
+      regionSynergies.includes(Synergy.POISON) ||
+      regionSynergies.includes(Synergy.GROUND) ||
+      regionSynergies.includes(Synergy.FIELD)
+    )
+  }
 }
 
 export class Nidorino extends Pokemon {
@@ -3751,6 +3762,14 @@ export class Nidorino extends Pokemon {
   skill = Ability.HORN_ATTACK
   attackSprite = AttackSprite.POISON_MELEE
   regional = true
+  isInRegion(map: DungeonPMDO, state: GameState) {
+    const regionSynergies = DungeonDetails[map]?.synergies
+    return (
+      regionSynergies.includes(Synergy.POISON) ||
+      regionSynergies.includes(Synergy.GROUND) ||
+      regionSynergies.includes(Synergy.FIELD)
+    )
+  }
 }
 
 export class Nidoking extends Pokemon {
@@ -3771,6 +3790,14 @@ export class Nidoking extends Pokemon {
   skill = Ability.HORN_ATTACK
   attackSprite = AttackSprite.POISON_MELEE
   regional = true
+  isInRegion(map: DungeonPMDO, state: GameState) {
+    const regionSynergies = DungeonDetails[map]?.synergies
+    return (
+      regionSynergies.includes(Synergy.POISON) ||
+      regionSynergies.includes(Synergy.GROUND) ||
+      regionSynergies.includes(Synergy.FIELD)
+    )
+  }
 }
 
 export class Machop extends Pokemon {
@@ -7290,9 +7317,11 @@ export class Primeape extends Pokemon {
   rarity = Rarity.EPIC
   stars = 2
   evolution = Pkm.ANNIHILAPE
-  evolutionRule = new ConditionBasedEvolutionRule((pokemon) => pokemon.atk > 30)
+  evolutionRule = new ConditionBasedEvolutionRule(
+    (pokemon) => pokemon.atk >= 30
+  )
   hp = 240
-  atk = 19
+  atk = 20
   speed = 54
   def = 12
   speDef = 4
@@ -7312,7 +7341,7 @@ export class Annihilape extends Pokemon {
   rarity = Rarity.EPIC
   stars = 3
   hp = 320
-  atk = 28
+  atk = 30
   speed = 54
   def = 12
   speDef = 14
@@ -7798,9 +7827,6 @@ export class Clamperl extends Pokemon {
       }
     }
   )
-  onChangePosition(x: number, y: number, player: Player): void {
-    player.refreshShopUI()
-  }
 }
 
 export class Gorebyss extends Pokemon {
@@ -17711,7 +17737,7 @@ export class Veluza extends Pokemon {
   speDef = 4
   maxPP = 80
   range = 1
-  skill = Ability.FILET_AWAY
+  skill = Ability.FILLET_AWAY
   attackSprite = AttackSprite.WATER_MELEE
 }
 

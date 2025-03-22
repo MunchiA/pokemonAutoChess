@@ -630,6 +630,7 @@ export default class GameRoom extends Room<GameState> {
           )*/
         } else if (player && !player.hasLeftGame) {
           player.hasLeftGame = true
+          player.spectatedPlayerId = player.id
 
           if (!this.state.gameFinished && player.life > 0) {
             // player left before being eliminated, in that case we consider this a surrender and give them the worst possible rank
@@ -995,9 +996,12 @@ export default class GameRoom extends Room<GameState> {
     return hasEvolved
   }
 
-  checkEvolutionsAfterItemAcquired(playerId: string, pokemon: Pokemon) {
+  checkEvolutionsAfterItemAcquired(
+    playerId: string,
+    pokemon: Pokemon
+  ): Pokemon | void {
     const player = this.state.players.get(playerId)
-    if (!player) return false
+    if (!player) return
 
     if (
       pokemon.evolutionRule &&
@@ -1008,6 +1012,7 @@ export default class GameRoom extends Room<GameState> {
         player,
         this.state.stageLevel
       )
+      return pokemonEvolved
     }
   }
 
@@ -1089,7 +1094,7 @@ export default class GameRoom extends Room<GameState> {
 
     if (
       this.state.specialGameRule === SpecialGameRule.FIRST_PARTNER &&
-      this.state.stageLevel === 1
+      this.state.stageLevel <= 1
     ) {
       player.firstPartner = pokemonsObtained[0].name
     }
