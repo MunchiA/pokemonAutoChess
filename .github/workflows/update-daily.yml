@@ -1,9 +1,9 @@
-name: Update Repository Daily
+name: Update Repository on New Tag
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Ejecutar el flujo de trabajo todos los días a medianoche (UTC)
-  workflow_dispatch:  # Permite ejecutar el workflow manualmente desde GitHub
+    - cron: '0 0 * * *'  # Ejecutar una vez al día
+  workflow_dispatch:  # Permitir ejecución manual
 
 jobs:
   update-repository:
@@ -12,31 +12,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up Git
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-
-      - name: Configure Git
+      - name: Fetch latest tag from upstream
         run: |
-          git config --global user.name "MunchiA"
-          git config --global user.email "147060584+MunchiA@users.noreply.github.com"
-          git config --global rerere.enabled true
+          git fetch --tags https://github.com/keldaanCommunity/pokemonAutoChess.git
+          LATEST_UPSTREAM_TAG=$(git ls-remote --tags https://github.com/keldaanCommunity/pokemonAutoChess.git | awk -F/ '{print $3}' | sort -V | tail -n1)
+          echo "LATEST_UPSTREAM_TAG=$LATEST_UPSTREAM_TAG" >> $GITHUB_ENV
 
-      - name: Add Remote Upstream
+      - name: Fetch latest tag from fork
         run: |
-          git remote add upstream https://github.com/keldaanCommunity/pokemonAutoChess.git
-          git fetch upstream
+          git fetch --tags origin
+          LATEST_FORK_TAG=$(git tag | sort -V | tail -n1)
+          echo "LATEST_FORK_TAG=$LATEST_FORK_TAG" >> $GITHUB_ENV
+
+      - name: Compare Tags
+        id: check_tags
+        run: |
+          echo "Upstream Tag: $LATEST_UPSTREAM_TAG"
+          echo "Fork Tag: $LATEST_FORK_TAG"
+          if [ "$LATEST_UPSTREAM_TAG" != "$LATEST_FORK_TAG" ]; then
+            echo "NEW_TAG=true" >> $GITHUB_ENV
+          else
+            echo "NEW_TAG=false" >> $GITHUB_ENV
+          fi
 
       - name: Merge Upstream Changes
+        if: ${{ steps.check_tags.outputs.NEW_TAG == 'true' }}
         run: |
+          git remote add upstream https://github.com/keldaanCommunity/pokemonAutoChess.git || true
+          git fetch upstream
           git checkout master
           git merge upstream/master --strategy-option theirs --allow-unrelated-histories
-
+        
       - name: Push to Origin
+        if: ${{ steps.check_tags.outputs.NEW_TAG == 'true' }}
         run: |
           git push origin master
-
-      - name: Use Secret in Workflow
+        
+      - name: Create New Tag
+        if: ${{ steps.check_tags.outputs.NEW_TAG == 'true' }}
         run: |
-          echo "My secret is ${{ secrets.UPDATE }}"
+          git tag $LATEST_UPSTREAM_TAG
+          git push origin $LATEST_UPSTREAM_TAG
