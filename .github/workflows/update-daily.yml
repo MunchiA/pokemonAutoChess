@@ -69,7 +69,7 @@ jobs:
       - name: Create Release in Fork
         if: ${{ steps.check_tags.outputs.NEW_TAG == 'true' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.UPDATE }}
+          GITHUB_TOKEN: ${{ secrets.POKEMON }}
         run: |
           curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
                -H "Accept: application/vnd.github.v3+json" \
